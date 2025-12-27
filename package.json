@@ -1,0 +1,27 @@
+{
+  "name": "digital-home-uniapp",
+  "version": "1.0.0",
+  "description": "数字家 - 零知识加密的家庭记录应用",
+  "main": "main.js",
+  "scripts": {
+    "dev": "npm run dev:h5",
+    "dev:h5": "uni",
+    "dev:mp-weixin": "uni -p mp-weixin",
+    "build:h5": "uni build",
+    "build:mp-weixin": "uni build -p mp-weixin"
+  },
+  "dependencies": {
+    "crypto-js": "^4.2.0",
+    "dayjs": "^1.11.10",
+    "jsencrypt": "^3.3.2",
+    "pinia": "^2.1.7",
+    "vue": "^3.3.4"
+  },
+  "devDependencies": {
+    "@dcloudio/types": "^3.4.8",
+    "@dcloudio/uni-app": "^3.0.0-alpha-4020920240930001",
+    "@dcloudio/uni-mp-weixin": "^3.0.0-alpha-4020920240930001",
+    "@dcloudio/uni-h5": "^3.0.0-alpha-4020920240930001",
+    "@vue/runtime-core": "^3.3.4"
+  }
+}
