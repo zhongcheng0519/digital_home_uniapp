@@ -97,13 +97,22 @@ const handleLogin = async () => {
 }
 
 const goToRegister = () => {
-  uni.navigateTo({
-    url: '/pages/auth/register',
-    fail: (err) => {
-      console.error('跳转失败:', err)
-      window.location.href = '/pages/auth/register'
+  try {
+    uni.navigateTo({
+      url: '/pages/auth/register',
+      fail: (err) => {
+        console.error('navigateTo failed:', err)
+        if (typeof window !== 'undefined') {
+          window.location.href = '#/pages/auth/register'
+        }
+      }
+    })
+  } catch (error) {
+    console.error('Navigation error:', error)
+    if (typeof window !== 'undefined') {
+      window.location.href = '#/pages/auth/register'
     }
-  })
+  }
 }
 </script>
 

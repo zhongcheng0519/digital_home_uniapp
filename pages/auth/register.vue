@@ -150,9 +150,22 @@ const handleRegister = async () => {
 }
 
 const goToLogin = () => {
-  uni.navigateTo({
-    url: '/pages/auth/login'
-  })
+  try {
+    uni.navigateTo({
+      url: '/pages/auth/login',
+      fail: (err) => {
+        console.error('navigateTo failed:', err)
+        if (typeof window !== 'undefined') {
+          window.location.href = '#/pages/auth/login'
+        }
+      }
+    })
+  } catch (error) {
+    console.error('Navigation error:', error)
+    if (typeof window !== 'undefined') {
+      window.location.href = '#/pages/auth/login'
+    }
+  }
 }
 </script>
 

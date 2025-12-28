@@ -1,5 +1,5 @@
 {
-	"pages": [ //pages数组中第一项表示应用启动页，参考：https://uniapp.dcloud.io/collocation/pages
+	"pages": [
 		{
 			"path": "pages/auth/login",
 			"style": {
@@ -44,6 +44,12 @@
 		"navigationBarTitleText": "uni-app",
 		"navigationBarBackgroundColor": "#F8F8F8",
 		"backgroundColor": "#F8F8F8"
+	},
+	"h5": {
+		"router": {
+			"mode": "hash",
+			"base": "/"
+		}
 	},
 	"uniIdRouter": {}
 }

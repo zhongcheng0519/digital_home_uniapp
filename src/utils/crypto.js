@@ -66,12 +66,14 @@ export function decryptPrivateKey(encryptedPrivateKey, password) {
     
     const combined = CryptoJS.enc.Base64.parse(encryptedPrivateKey)
     console.log('解析后的数据长度:', combined.sigBytes)
+    console.log('解析后的数据 (hex):', combined.toString(CryptoJS.enc.Hex).substring(0, 100) + '...')
     
-    const iv = CryptoJS.lib.WordArray.create(combined.words.slice(0, 4))
-    const ciphertext = CryptoJS.lib.WordArray.create(combined.words.slice(4))
+    const iv = CryptoJS.lib.WordArray.create(combined.words.slice(0, 4), 16)
+    const ciphertext = CryptoJS.lib.WordArray.create(combined.words.slice(4), combined.sigBytes - 16)
     
     console.log('IV (hex):', iv.toString(CryptoJS.enc.Hex))
     console.log('密文长度:', ciphertext.sigBytes)
+    console.log('密文 (hex):', ciphertext.toString(CryptoJS.enc.Hex).substring(0, 100) + '...')
     
     const decrypted = CryptoJS.AES.decrypt(
       { ciphertext: ciphertext },
@@ -82,6 +84,9 @@ export function decryptPrivateKey(encryptedPrivateKey, password) {
         padding: CryptoJS.pad.Pkcs7
       }
     )
+    
+    console.log('解密后 WordArray sigBytes:', decrypted.sigBytes)
+    console.log('解密后 WordArray (hex):', decrypted.toString(CryptoJS.enc.Hex).substring(0, 100) + '...')
     
     const result = decrypted.toString(CryptoJS.enc.Utf8)
     console.log('解密结果长度:', result.length)
@@ -110,8 +115,8 @@ export function decryptData(ciphertext, aesKey) {
   try {
     const key = CryptoJS.enc.Utf8.parse(aesKey)
     const combined = CryptoJS.enc.Base64.parse(ciphertext)
-    const iv = CryptoJS.lib.WordArray.create(combined.words.slice(0, 4))
-    const encryptedData = CryptoJS.lib.WordArray.create(combined.words.slice(4))
+    const iv = CryptoJS.lib.WordArray.create(combined.words.slice(0, 4), 16)
+    const encryptedData = CryptoJS.lib.WordArray.create(combined.words.slice(4), combined.sigBytes - 16)
     const decrypted = CryptoJS.AES.decrypt(
       { ciphertext: encryptedData },
       key,
