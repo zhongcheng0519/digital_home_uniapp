@@ -1,28 +1,47 @@
 <script setup>
+import { onLaunch, onShow } from '@dcloudio/uni-app'
 import { useUserStore } from '@/src/stores/user'
 import { useFamilyStore } from '@/src/stores/family'
 
 const userStore = useUserStore()
 const familyStore = useFamilyStore()
 
+let hasCheckedAuth = false
+
 onLaunch(() => {
   userStore.loadFromStorage()
   familyStore.loadFromStorage()
+  setTimeout(() => {
+    checkAuth()
+  }, 100)
 })
 
 onShow(() => {
-  checkAuth()
+  if (!hasCheckedAuth) {
+    setTimeout(() => {
+      checkAuth()
+    }, 100)
+    hasCheckedAuth = true
+  }
 })
 
 const checkAuth = () => {
-  const pages = getCurrentPages()
-  const currentPage = pages[pages.length - 1]
-  const currentRoute = currentPage ? currentPage.route : ''
-  
-  if (!userStore.isLoggedIn && currentRoute !== 'pages/auth/register' && currentRoute !== 'pages/auth/login') {
-    uni.reLaunch({
-      url: '/pages/auth/login'
-    })
+  try {
+    const pages = getCurrentPages()
+    if (!pages || pages.length === 0) {
+      return
+    }
+    
+    const currentPage = pages[pages.length - 1]
+    const currentRoute = currentPage?.route || ''
+    
+    if (!userStore.isLoggedIn && currentRoute !== 'pages/auth/register' && currentRoute !== 'pages/auth/login') {
+      uni.reLaunch({
+        url: '/pages/auth/login'
+      })
+    }
+  } catch (error) {
+    console.error('检查认证状态失败:', error)
   }
 }
 </script>

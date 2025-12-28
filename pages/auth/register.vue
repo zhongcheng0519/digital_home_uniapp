@@ -18,13 +18,14 @@
       </view>
       
       <view class="form-item">
-        <text class="label">用户名</text>
+        <text class="label">姓名</text>
         <input 
           class="input" 
           type="text" 
           v-model="username" 
-          placeholder="请输入用户名"
+          placeholder="请输入姓名"
           maxlength="20"
+          confirm-type="next"
         />
       </view>
       
@@ -90,7 +91,7 @@ const validateForm = () => {
     return false
   }
   if (!username.value) {
-    uni.showToast({ title: '请输入用户名', icon: 'none' })
+    uni.showToast({ title: '请输入姓名', icon: 'none' })
     return false
   }
   if (!password.value) {

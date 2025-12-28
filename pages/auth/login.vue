@@ -98,7 +98,11 @@ const handleLogin = async () => {
 
 const goToRegister = () => {
   uni.navigateTo({
-    url: '/pages/auth/register'
+    url: '/pages/auth/register',
+    fail: (err) => {
+      console.error('跳转失败:', err)
+      window.location.href = '/pages/auth/register'
+    }
   })
 }
 </script>

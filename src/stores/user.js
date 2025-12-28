@@ -23,13 +23,23 @@ export const useUserStore = defineStore('user', {
       try {
         const response = await authApi.login({ phone, password })
         
+        console.log('登录响应:', JSON.stringify(response, null, 2))
+        
         this.token = response.access_token
         this.userInfo = response.user_info
         
         uni.setStorageSync('token', this.token)
         storage.set('userInfo', this.userInfo)
         
+        if (!response.user_info) {
+          throw new Error('登录响应缺少用户信息')
+        }
+        
         const encryptedPrivateKey = response.user_info.encrypted_private_key
+        if (!encryptedPrivateKey) {
+          throw new Error('登录响应缺少加密私钥')
+        }
+        
         const decryptedPrivateKey = decryptPrivateKey(encryptedPrivateKey, password)
         
         this.myPrivateKey = decryptedPrivateKey
