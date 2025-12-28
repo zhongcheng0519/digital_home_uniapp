@@ -83,7 +83,7 @@ const handleLogin = async () => {
     uni.showToast({ title: '登录成功', icon: 'success' })
     
     setTimeout(() => {
-      uni.switchTab({
+      uni.reLaunch({
         url: '/pages/index/index'
       })
     }, 1500)

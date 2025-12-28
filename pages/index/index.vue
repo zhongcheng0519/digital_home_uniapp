@@ -181,7 +181,7 @@ onMounted(async () => {
   userStore.loadFromStorage()
   
   if (!userStore.isLoggedIn) {
-    uni.navigateTo({
+    uni.reLaunch({
       url: '/pages/auth/login'
     })
     return

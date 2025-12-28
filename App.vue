@@ -1,13 +1,13 @@
 <script setup>
-import { useUserStore } from '@/stores/user'
-import { useFamilyStore } from '@/stores/family'
+import { useUserStore } from '@/src/stores/user'
+import { useFamilyStore } from '@/src/stores/family'
 
 const userStore = useUserStore()
 const familyStore = useFamilyStore()
 
 onLaunch(() => {
-  userStore.restoreFromStorage()
-  familyStore.restoreFromStorage()
+  userStore.loadFromStorage()
+  familyStore.loadFromStorage()
 })
 
 onShow(() => {
@@ -19,8 +19,8 @@ const checkAuth = () => {
   const currentPage = pages[pages.length - 1]
   const currentRoute = currentPage ? currentPage.route : ''
   
-  if (!userStore.isAuthenticated && currentRoute !== 'pages/auth/register' && currentRoute !== 'pages/auth/login') {
-    uni.redirectTo({
+  if (!userStore.isLoggedIn && currentRoute !== 'pages/auth/register' && currentRoute !== 'pages/auth/login') {
+    uni.reLaunch({
       url: '/pages/auth/login'
     })
   }

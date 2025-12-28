@@ -48,6 +48,19 @@ export const useFamilyStore = defineStore('family', {
       if (!exists) {
         this.myFamilies.push(family)
       }
+    },
+    
+    loadFromStorage() {
+      const families = uni.getStorageSync('myFamilies')
+      if (families) {
+        this.myFamilies = families
+      }
+    },
+    
+    clearAll() {
+      this.currentFamily = null
+      this.currentFamilyKey = ''
+      this.myFamilies = []
     }
   }
 })
