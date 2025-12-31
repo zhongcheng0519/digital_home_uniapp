@@ -5,6 +5,23 @@ const AES_KEY_SIZE = 256
 const AES_IV_SIZE = 128
 const RSA_KEY_SIZE = 2048
 
+function stringToUint8Array(str) {
+  const utf8 = unescape(encodeURIComponent(str))
+  const arr = new Uint8Array(utf8.length)
+  for (let i = 0; i < utf8.length; i++) {
+    arr[i] = utf8.charCodeAt(i)
+  }
+  return arr
+}
+
+function uint8ArrayToString(arr) {
+  let str = ''
+  for (let i = 0; i < arr.length; i++) {
+    str += String.fromCharCode(arr[i])
+  }
+  return decodeURIComponent(escape(str))
+}
+
 function generateRandomBytes(nBytes) {
   const bytes = new Uint8Array(nBytes)
   for (let i = 0; i < nBytes; i++) {
@@ -52,59 +69,33 @@ export function generateRSAKeyPair() {
   }
 }
 
-export async function encryptPrivateKey(privateKey, password) {
+export function encryptPrivateKey(privateKey, password) {
   console.log('=== 加密私钥 ===')
   console.log('密码长度:', password.length)
   console.log('密码:', password)
   console.log('私钥长度:', privateKey.length)
   
-  const passwordBuffer = new TextEncoder().encode(password)
+  const salt = bytesToWordArray(generateRandomBytes(16))
+  console.log('Salt (hex):', salt.toString(CryptoJS.enc.Hex))
   
-  const salt = window.crypto.getRandomValues(new Uint8Array(16))
-  console.log('Salt (hex):', arrayBufferToHex(salt))
+  const key = CryptoJS.PBKDF2(password, salt, {
+    keySize: 256 / 32,
+    iterations: 100000,
+    hasher: CryptoJS.algo.SHA256
+  })
   
-  const keyMaterial = await window.crypto.subtle.importKey(
-    'raw',
-    passwordBuffer,
-    'PBKDF2',
-    false,
-    ['deriveKey']
-  )
+  const iv = bytesToWordArray(generateRandomBytes(16))
+  console.log('IV (hex):', iv.toString(CryptoJS.enc.Hex))
   
-  const key = await window.crypto.subtle.deriveKey(
-    {
-      name: 'PBKDF2',
-      salt: salt,
-      iterations: 100000,
-      hash: 'SHA-256'
-    },
-    keyMaterial,
-    { name: 'AES-GCM', length: 256 },
-    false,
-    ['encrypt']
-  )
+  const encrypted = CryptoJS.AES.encrypt(privateKey, key, {
+    iv: iv,
+    mode: CryptoJS.mode.CBC,
+    padding: CryptoJS.pad.Pkcs7
+  })
   
-  const iv = window.crypto.getRandomValues(new Uint8Array(12))
-  console.log('IV (hex):', arrayBufferToHex(iv))
-  
-  const privateKeyBuffer = new TextEncoder().encode(privateKey)
-  
-  const encrypted = await window.crypto.subtle.encrypt(
-    {
-      name: 'AES-GCM',
-      iv: iv
-    },
-    key,
-    privateKeyBuffer
-  )
-  
-  const encryptedArray = new Uint8Array(encrypted)
-  const combined = new Uint8Array(iv.length + encryptedArray.length)
-  combined.set(iv, 0)
-  combined.set(encryptedArray, iv.length)
-  
-  const result = arrayBufferToBase64(combined.buffer)
-  const saltB64 = arrayBufferToBase64(salt.buffer)
+  const combined = iv.concat(encrypted.ciphertext)
+  const result = combined.toString(CryptoJS.enc.Base64)
+  const saltB64 = salt.toString(CryptoJS.enc.Base64)
   
   console.log('加密结果 (base64):', result.substring(0, 50) + '...')
   console.log('Salt (base64):', saltB64.substring(0, 50) + '...')
@@ -115,7 +106,7 @@ export async function encryptPrivateKey(privateKey, password) {
   }
 }
 
-export async function decryptPrivateKey(encryptedPrivateKey, password, saltB64) {
+export function decryptPrivateKey(encryptedPrivateKey, password, saltB64) {
   try {
     console.log('=== 解密私钥 ===')
     console.log('密码长度:', password.length)
@@ -123,60 +114,46 @@ export async function decryptPrivateKey(encryptedPrivateKey, password, saltB64) 
     console.log('加密数据 (base64):', encryptedPrivateKey.substring(0, 50) + '...')
     console.log('Salt (base64):', saltB64.substring(0, 50) + '...')
     
-    const combined = base64ToArrayBuffer(encryptedPrivateKey)
-    const combinedArray = new Uint8Array(combined)
+    const combined = CryptoJS.enc.Base64.parse(encryptedPrivateKey)
+    console.log('解析后的数据长度:', combined.sigBytes)
+    console.log('解析后的数据 (hex):', combined.toString(CryptoJS.enc.Hex).substring(0, 100) + '...')
     
-    console.log('解析后的数据长度:', combinedArray.length)
-    console.log('解析后的数据 (hex):', arrayBufferToHex(combined).substring(0, 100) + '...')
+    const iv = CryptoJS.lib.WordArray.create(combined.words.slice(0, 4), 16)
+    const ciphertext = CryptoJS.lib.WordArray.create(combined.words.slice(4), combined.sigBytes - 16)
     
-    const iv = combinedArray.slice(0, 12)
-    const ciphertext = combinedArray.slice(12)
+    console.log('IV (hex):', iv.toString(CryptoJS.enc.Hex))
+    console.log('密文长度:', ciphertext.sigBytes)
+    console.log('密文 (hex):', ciphertext.toString(CryptoJS.enc.Hex).substring(0, 100) + '...')
     
-    console.log('IV (hex):', arrayBufferToHex(iv))
-    console.log('密文长度:', ciphertext.length)
-    console.log('密文 (hex):', arrayBufferToHex(ciphertext).substring(0, 100) + '...')
+    const salt = CryptoJS.enc.Base64.parse(saltB64)
+    console.log('使用 salt (hex):', salt.toString(CryptoJS.enc.Hex))
     
-    const passwordBuffer = new TextEncoder().encode(password)
+    const key = CryptoJS.PBKDF2(password, salt, {
+      keySize: 256 / 32,
+      iterations: 100000,
+      hasher: CryptoJS.algo.SHA256
+    })
     
-    const salt = new Uint8Array(base64ToArrayBuffer(saltB64))
-    console.log('使用 salt (hex):', arrayBufferToHex(salt))
-    
-    const keyMaterial = await window.crypto.subtle.importKey(
-      'raw',
-      passwordBuffer,
-      'PBKDF2',
-      false,
-      ['deriveKey']
-    )
-    
-    const key = await window.crypto.subtle.deriveKey(
-      {
-        name: 'PBKDF2',
-        salt: salt,
-        iterations: 100000,
-        hash: 'SHA-256'
-      },
-      keyMaterial,
-      { name: 'AES-GCM', length: 256 },
-      false,
-      ['decrypt']
-    )
-    
-    const decrypted = await window.crypto.subtle.decrypt(
-      {
-        name: 'AES-GCM',
-        iv: iv
-      },
+    const decrypted = CryptoJS.AES.decrypt(
+      { ciphertext: ciphertext },
       key,
-      ciphertext
+      {
+        iv: iv,
+        mode: CryptoJS.mode.CBC,
+        padding: CryptoJS.pad.Pkcs7
+      }
     )
     
-    console.log('解密后数据长度:', decrypted.byteLength)
-    console.log('解密后数据 (hex):', arrayBufferToHex(decrypted).substring(0, 100) + '...')
+    console.log('解密后数据长度:', decrypted.sigBytes)
+    console.log('解密后数据 (hex):', decrypted.toString(CryptoJS.enc.Hex).substring(0, 100) + '...')
     
-    const result = new TextDecoder().decode(decrypted)
+    const result = decrypted.toString(CryptoJS.enc.Utf8)
     console.log('解密结果长度:', result.length)
     console.log('解密结果:', result.substring(0, 50) + '...')
+    
+    if (!result) {
+      throw new Error('解密结果为空，可能密码错误')
+    }
     
     return result
   } catch (error) {
