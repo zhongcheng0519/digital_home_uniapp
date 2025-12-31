@@ -118,7 +118,7 @@ const handleRegister = async () => {
     uni.showLoading({ title: '生成密钥中...' })
     
     const { publicKey, privateKey } = generateRSAKeyPair()
-    const encryptedPrivateKey = encryptPrivateKey(privateKey, password.value)
+    const { encrypted_private_key, private_key_salt } = await encryptPrivateKey(privateKey, password.value)
     
     uni.hideLoading()
     uni.showLoading({ title: '注册中...' })
@@ -128,7 +128,8 @@ const handleRegister = async () => {
       username: username.value,
       password: password.value,
       public_key: publicKey,
-      encrypted_private_key: encryptedPrivateKey
+      encrypted_private_key: encrypted_private_key,
+      private_key_salt: private_key_salt
     })
     
     uni.hideLoading()

@@ -40,7 +40,12 @@ export const useUserStore = defineStore('user', {
           throw new Error('登录响应缺少加密私钥')
         }
         
-        const decryptedPrivateKey = decryptPrivateKey(encryptedPrivateKey, password)
+        const privateKeySalt = response.user_info.private_key_salt
+        if (!privateKeySalt) {
+          throw new Error('登录响应缺少私钥盐值')
+        }
+        
+        const decryptedPrivateKey = await decryptPrivateKey(encryptedPrivateKey, password, privateKeySalt)
         
         this.myPrivateKey = decryptedPrivateKey
         

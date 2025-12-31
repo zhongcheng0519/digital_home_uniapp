@@ -28,6 +28,7 @@ Digital Home 是一个基于 FastAPI 的数字家庭后端服务，实现了零�
 - `hashed_password`: 加密密码
 - `public_key`: 公钥（用于加密）
 - `encrypted_private_key`: 加密的私钥
+- `private_key_salt`: 私钥加密使用的盐值
 
 #### Family (家庭)
 - `id`: 家庭ID
@@ -73,7 +74,8 @@ Digital Home 是一个基于 FastAPI 的数字家庭后端服务，实现了零�
   "username": "张三",
   "password": "password123",
   "public_key": "-----BEGIN PUBLIC KEY-----...",
-  "encrypted_private_key": "encrypted_base64_string"
+  "encrypted_private_key": "encrypted_base64_string",
+  "private_key_salt": "salt_base64_string"
 }
 ```
 
@@ -84,7 +86,8 @@ Digital Home 是一个基于 FastAPI 的数字家庭后端服务，实现了零�
   "phone": "13800138000",
   "username": "张三",
   "public_key": "-----BEGIN PUBLIC KEY-----...",
-  "encrypted_private_key": "encrypted_base64_string"
+  "encrypted_private_key": "encrypted_base64_string",
+  "private_key_salt": "salt_base64_string"
 }
 ```
 
@@ -115,7 +118,8 @@ Digital Home 是一个基于 FastAPI 的数字家庭后端服务，实现了零�
     "phone": "13800138000",
     "username": "张三",
     "public_key": "-----BEGIN PUBLIC KEY-----...",
-    "encrypted_private_key": "encrypted_base64_string"
+    "encrypted_private_key": "encrypted_base64_string",
+    "private_key_salt": "salt_base64_string"
   }
 }
 ```
@@ -316,8 +320,9 @@ GET /api/v1/milestone/?family_id=1&year=2024
 ### 注册流程
 
 1. 前端生成 RSA 密钥对（公钥 + 私钥）
-2. 用用户密码加密私钥，得到 `encrypted_private_key`
-3. 发送注册请求，包含公钥和加密的私钥
+2. 使用 PBKDF2 从用户密码派生加密密钥（生成随机 salt）
+3. 用派生密钥加密私钥，得到 `encrypted_private_key`
+4. 发送注册请求，包含公钥、加密的私钥和 salt
 
 ### 创建家庭流程
 
@@ -338,9 +343,11 @@ GET /api/v1/milestone/?family_id=1&year=2024
 
 ### 解密流程
 
-1. 用用户密码解密 `encrypted_private_key`，得到私钥
-2. 用私钥解密 `encrypted_family_key`，得到家庭密钥
-3. 用家庭密钥解密 `content_ciphertext`，得到原始内容
+1. 从服务器获取 `encrypted_private_key` 和 `private_key_salt`
+2. 使用相同的 PBKDF2 和 `private_key_salt` 从用户密码派生相同的密钥
+3. 用派生密钥解密 `encrypted_private_key`，得到私钥
+4. 用私钥解密 `encrypted_family_key`，得到家庭密钥
+5. 用家庭密钥解密 `content_ciphertext`，得到原始内容
 
 ---
 
