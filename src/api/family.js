@@ -14,6 +14,6 @@ export default {
   },
   
   getUserPublicKey(phone) {
-    return request.get(`/user/public-key?phone=${phone}`)
+    return request.get(`/auth/public-key?phone=${phone}`)
   }
 }
