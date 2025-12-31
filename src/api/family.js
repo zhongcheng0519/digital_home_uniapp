@@ -11,5 +11,9 @@ export default {
   
   getMyFamilies() {
     return request.get('/family/my')
+  },
+  
+  getUserPublicKey(phone) {
+    return request.get(`/user/public-key?phone=${phone}`)
   }
 }

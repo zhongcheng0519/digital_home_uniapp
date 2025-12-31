@@ -131,6 +131,37 @@ Digital Home 是一个基于 FastAPI 的数字家庭后端服务，实现了零�
 
 ---
 
+### 3. 获取用户公钥
+
+**接口**: `GET /api/v1/auth/public-key`
+
+**需要认证**: 否
+
+**查询参数**:
+- `phone` (必填): 用户手机号
+
+**请求示例**:
+```
+GET /api/v1/auth/public-key?phone=13800138000
+```
+
+**响应**:
+```json
+{
+  "public_key": "-----BEGIN PUBLIC KEY-----..."
+}
+```
+
+**错误响应**:
+- `404 Not Found`: 用户不存在
+
+**说明**: 
+- 此接口不需要身份认证
+- 公钥是公开信息，可以自由获取
+- 用于添加家庭成员时获取目标用户的公钥，以便加密家庭密钥
+
+---
+
 ## 家庭模块 (Family)
 
 ### 1. 创建家庭
@@ -332,7 +363,7 @@ GET /api/v1/milestone/?family_id=1&year=2024
 
 ### 添加成员流程
 
-1. 获取目标用户的公钥
+1. 调用 `GET /api/v1/auth/public-key?phone={target_phone}` 获取目标用户的公钥
 2. 用目标用户的公钥加密家庭密钥，得到 `encrypted_key_for_target`
 3. 发送添加成员请求
 
