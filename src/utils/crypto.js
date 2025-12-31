@@ -35,16 +35,11 @@ function arrayBufferToBase64(buffer) {
   for (let i = 0; i < bytes.length; i++) {
     binary += String.fromCharCode(bytes[i])
   }
-  return window.btoa(binary)
+  return uni.arrayBufferToBase64(buffer)
 }
 
 function base64ToArrayBuffer(base64) {
-  const binary = window.atob(base64)
-  const bytes = new Uint8Array(binary.length)
-  for (let i = 0; i < binary.length; i++) {
-    bytes[i] = binary.charCodeAt(i)
-  }
-  return bytes.buffer
+  return uni.base64ToArrayBuffer(base64)
 }
 
 export function generateRSAKeyPair() {

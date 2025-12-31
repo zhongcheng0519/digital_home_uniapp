@@ -50,6 +50,7 @@
 
 <script setup>
 import { ref, onMounted } from 'vue'
+import { onShow } from '@dcloudio/uni-app'
 import { useUserStore } from '../../src/stores/user'
 import { useFamilyStore } from '../../src/stores/family'
 import familyApi from '../../src/api/family'
@@ -189,6 +190,12 @@ onMounted(async () => {
   
   await loadFamilies()
   await loadMilestones()
+})
+
+onShow(async () => {
+  if (userStore.isLoggedIn && familyStore.hasCurrentFamily) {
+    await loadMilestones()
+  }
 })
 </script>
 
