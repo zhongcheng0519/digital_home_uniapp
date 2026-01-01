@@ -8,27 +8,47 @@
     <view class="todo-list" v-if="todos.length > 0">
       <view 
         class="todo-card" 
+        :class="{ completed: todo.is_completed }"
         v-for="todo in todos" 
         :key="todo.id"
+        @click="onCardClick(todo)"
+        @touchstart="onTouchStart($event, todo)"
+        @touchmove="onTouchMove($event, todo)"
+        @touchend="onTouchEnd($event, todo)"
       >
-        <view class="todo-main">
-          <view class="todo-title">{{ todo.decryptedTitle || '解密中...' }}</view>
-          <view class="todo-description" v-if="todo.decryptedDescription">
-            {{ todo.decryptedDescription }}
-          </view>
-          <view class="todo-meta">
-            <text class="todo-creator">创建者: {{ todo.creatorName }}</text>
-            <text class="todo-date">{{ formatTime(todo.created_at) }}</text>
+        <view 
+          class="todo-content-wrapper"
+          :style="{ transform: `translateX(${todo.showSwipeActions ? -200 : 0}px)` }"
+        >
+          <view class="todo-content">
+            <view class="todo-actions">
+              <view 
+                class="complete-btn" 
+                :class="{ completed: todo.is_completed, completing: todo.isCompleting }"
+                @click.stop="handleTodoClick(todo)"
+              >
+                <text v-if="todo.is_completed || todo.isCompleting">✓</text>
+                <view v-else class="circle-icon"></view>
+              </view>
+            </view>
+            <view class="todo-main">
+              <view class="todo-title">{{ todo.decryptedTitle || '解密中...' }}</view>
+              <view class="todo-description" v-if="todo.decryptedDescription">
+                {{ todo.decryptedDescription }}
+              </view>
+              <view class="todo-meta">
+                <text class="todo-creator">创建者: {{ todo.creatorName }}</text>
+                <text class="todo-date">{{ formatTime(todo.created_at) }}</text>
+              </view>
+            </view>
           </view>
         </view>
-        <view class="todo-actions">
-          <view 
-            class="complete-btn" 
-            :class="{ completed: todo.is_completed, completing: todo.isCompleting }"
-            @click="toggleComplete(todo)"
-          >
-            <text v-if="todo.is_completed || todo.isCompleting">✓</text>
-            <view v-else class="circle-icon"></view>
+        <view class="todo-swipe-actions" :class="{ visible: todo.showSwipeActions }">
+          <view class="swipe-btn edit" @click.stop="handleEdit(todo)">
+            <text>编辑</text>
+          </view>
+          <view class="swipe-btn delete" @click.stop="handleDelete(todo)">
+            <text>删除</text>
           </view>
         </view>
       </view>
@@ -74,6 +94,38 @@
         </view>
       </view>
     </view>
+    
+    <view class="modal" v-if="showEditModalFlag" @click="showEditModalFlag = false">
+      <view class="modal-content" @click.stop>
+        <view class="modal-header">
+          <text class="modal-title">编辑待办事项</text>
+          <text class="modal-close" @click="showEditModalFlag = false">×</text>
+        </view>
+        <view class="modal-body">
+          <view class="form-item">
+            <text class="form-label">标题 *</text>
+            <input 
+              class="form-input" 
+              v-model="editingTodo.title" 
+              placeholder="请输入待办事项标题"
+            />
+          </view>
+          <view class="form-item">
+            <text class="form-label">描述</text>
+            <textarea 
+              class="form-textarea" 
+              v-model="editingTodo.description" 
+              placeholder="请输入详细描述（可选）"
+              :maxlength="500"
+            />
+          </view>
+        </view>
+        <view class="modal-footer">
+          <text class="modal-btn cancel" @click="showEditModalFlag = false">取消</text>
+          <text class="modal-btn confirm" @click="handleEditTodo">确定</text>
+        </view>
+      </view>
+    </view>
   </view>
 </template>
 
@@ -93,13 +145,28 @@ const familyStore = useFamilyStore()
 const todos = ref([])
 const loading = ref(false)
 const showAddModal = ref(false)
+const showEditModalFlag = ref(false)
 const newTodo = ref({
   title: '',
   description: ''
 })
+const editingTodo = ref({
+  id: null,
+  title: '',
+  description: ''
+})
+const touchStartX = ref(0)
+const currentSwipeTodo = ref(null)
+const isSwiping = ref(false)
 
 const formatTime = (timeStr) => {
   return dayjs.utc(timeStr).utcOffset(8).format('MM-DD HH:mm')
+}
+
+const isOverOneMonth = (dateStr) => {
+  const date = dayjs.utc(dateStr).utcOffset(8)
+  const now = dayjs().utcOffset(8)
+  return now.diff(date, 'month') >= 1
 }
 
 const loadTodos = async () => {
@@ -115,13 +182,19 @@ const loadTodos = async () => {
     })
     
     todos.value = data
-      .filter(item => !item.is_completed)
+      .filter(item => {
+        if (item.is_completed) {
+          return !isOverOneMonth(item.updated_at)
+        }
+        return true
+      })
       .map(item => ({
         ...item,
         decryptedTitle: '',
         decryptedDescription: '',
         creatorName: '',
-        isCompleting: false
+        isCompleting: false,
+        showSwipeActions: false
       }))
     
     await decryptTodos()
@@ -226,34 +299,181 @@ const handleAddTodo = async () => {
   }
 }
 
+const handleTodoClick = (todo) => {
+  if (todo.is_completed) {
+    uni.showModal({
+      title: '恢复待办事项',
+      content: '确定要恢复这个待办事项吗？',
+      success: (res) => {
+        if (res.confirm) {
+          restoreTodo(todo)
+        }
+      }
+    })
+  } else {
+    toggleComplete(todo)
+  }
+}
+
+const onTouchStart = (e, todo) => {
+  touchStartX.value = e.touches[0].clientX
+  currentSwipeTodo.value = todo
+  isSwiping.value = true
+}
+
+const onTouchMove = (e, todo) => {
+  if (!isSwiping.value || !currentSwipeTodo.value || currentSwipeTodo.value.id !== todo.id) {
+    return
+  }
+  
+  const currentX = e.touches[0].clientX
+  const deltaX = currentX - touchStartX.value
+  
+  if (deltaX < -50) {
+    todo.showSwipeActions = true
+    todos.value.forEach(t => {
+      if (t.id !== todo.id) {
+        t.showSwipeActions = false
+      }
+    })
+  } else if (deltaX > 50 && todo.showSwipeActions) {
+    todo.showSwipeActions = false
+  }
+}
+
+const onTouchEnd = (e, todo) => {
+  if (!currentSwipeTodo.value || currentSwipeTodo.value.id !== todo.id) {
+    return
+  }
+  
+  isSwiping.value = false
+  currentSwipeTodo.value = null
+}
+
+const onCardClick = (todo) => {
+  if (!isSwiping.value) {
+    todo.showSwipeActions = false
+  }
+}
+
+const handleEdit = (todo) => {
+  showEditModal(todo)
+  todo.showSwipeActions = false
+}
+
+const handleDelete = (todo) => {
+  deleteTodo(todo)
+}
+
+const showEditModal = (todo) => {
+  editingTodo.value = {
+    id: todo.id,
+    title: todo.decryptedTitle,
+    description: todo.decryptedDescription || ''
+  }
+  showEditModalFlag.value = true
+  todo.showSwipeActions = false
+}
+
+const handleEditTodo = async () => {
+  if (!editingTodo.value.title.trim()) {
+    uni.showToast({ title: '请输入标题', icon: 'none' })
+    return
+  }
+  
+  try {
+    const familyKey = familyStore.currentFamilyKey
+    
+    const titleCiphertext = encryptData(editingTodo.value.title, familyKey)
+    const descriptionCiphertext = editingTodo.value.description
+      ? encryptData(editingTodo.value.description, familyKey)
+      : ''
+    
+    await todoApi.updateTodo(editingTodo.value.id, {
+      title_ciphertext: titleCiphertext,
+      description_ciphertext: descriptionCiphertext
+    })
+    
+    uni.showToast({ title: '修改成功', icon: 'success' })
+    showEditModalFlag.value = false
+    
+    await loadTodos()
+    
+  } catch (error) {
+    console.error('修改待办事项失败:', error)
+    uni.showToast({ title: '修改失败', icon: 'none' })
+  }
+}
+
+const deleteTodo = (todo) => {
+  uni.showModal({
+    title: '删除待办事项',
+    content: '确定要删除这个待办事项吗？',
+    success: async (res) => {
+      if (res.confirm) {
+        try {
+          await todoApi.deleteTodo(todo.id)
+          uni.showToast({ title: '删除成功', icon: 'success' })
+          todo.showSwipeActions = false
+          await loadTodos()
+        } catch (error) {
+          console.error('删除待办事项失败:', error)
+          uni.showToast({ title: '删除失败', icon: 'none' })
+        }
+      } else {
+        todo.showSwipeActions = false
+      }
+    }
+  })
+}
+
+const restoreTodo = async (todo) => {
+  try {
+    const familyKey = familyStore.currentFamilyKey
+    
+    const titleCiphertext = encryptData(todo.decryptedTitle, familyKey)
+    const descriptionCiphertext = todo.decryptedDescription
+      ? encryptData(todo.decryptedDescription, familyKey)
+      : ''
+    
+    await todoApi.updateTodo(todo.id, {
+      title_ciphertext: titleCiphertext,
+      description_ciphertext: descriptionCiphertext,
+      is_completed: false
+    })
+    
+    uni.showToast({ title: '已恢复待办事项', icon: 'success' })
+    
+    await loadTodos()
+    
+  } catch (error) {
+    console.error('恢复待办事项失败:', error)
+    uni.showToast({ title: '恢复失败', icon: 'none' })
+  }
+}
+
 const toggleComplete = async (todo) => {
   try {
-    todo.isCompleting = true
+    const familyKey = familyStore.currentFamilyKey
     
-    setTimeout(async () => {
-      const familyKey = familyStore.currentFamilyKey
-      
-      const titleCiphertext = encryptData(todo.decryptedTitle, familyKey)
-      const descriptionCiphertext = todo.decryptedDescription
-        ? encryptData(todo.decryptedDescription, familyKey)
-        : ''
-      
-      await todoApi.updateTodo(todo.id, {
-        title_ciphertext: titleCiphertext,
-        description_ciphertext: descriptionCiphertext,
-        is_completed: true
-      })
-      
-      uni.showToast({ title: '已存档', icon: 'success' })
-      
-      await loadTodos()
-      
-    }, 2000)
+    const titleCiphertext = encryptData(todo.decryptedTitle, familyKey)
+    const descriptionCiphertext = todo.decryptedDescription
+      ? encryptData(todo.decryptedDescription, familyKey)
+      : ''
+    
+    await todoApi.updateTodo(todo.id, {
+      title_ciphertext: titleCiphertext,
+      description_ciphertext: descriptionCiphertext,
+      is_completed: true
+    })
+    
+    uni.showToast({ title: '事项已完成', icon: 'success' })
+    
+    await loadTodos()
     
   } catch (error) {
     console.error('更新待办事项失败:', error)
     uni.showToast({ title: '更新失败', icon: 'none' })
-    todo.isCompleting = false
   }
 }
 
@@ -317,17 +537,42 @@ onShow(async () => {
 .todo-card {
   background: #ffffff;
   border-radius: 16rpx;
-  padding: 24rpx;
+  padding: 0;
   margin-bottom: 20rpx;
+  box-shadow: 0 2rpx 12rpx rgba(0, 0, 0, 0.05);
+  position: relative;
+  overflow: hidden;
+  height: auto;
+}
+
+.todo-content-wrapper {
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
-  box-shadow: 0 2rpx 12rpx rgba(0, 0, 0, 0.05);
+  width: 100%;
+  transition: transform 0.3s ease;
+  padding: 24rpx;
+}
+
+.todo-content {
+  display: flex;
+  justify-content: flex-start;
+  align-items: flex-start;
+  width: 100%;
+  gap: 20rpx;
+}
+
+.todo-actions {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding-top: 6rpx;
+  flex-shrink: 0;
 }
 
 .todo-main {
   flex: 1;
-  margin-right: 20rpx;
+  min-width: 0;
 }
 
 .todo-title {
@@ -352,10 +597,63 @@ onShow(async () => {
   color: #999999;
 }
 
-.todo-actions {
+.todo-swipe-actions {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
   display: flex;
-  flex-direction: column;
-  gap: 12rpx;
+  align-items: center;
+  transform: translateX(100%);
+  transition: transform 0.3s ease;
+}
+
+.todo-swipe-actions.visible {
+  transform: translateX(0);
+}
+
+.swipe-btn {
+  width: 100rpx;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 28rpx;
+  color: #ffffff;
+}
+
+.swipe-btn.edit {
+  background: #667eea;
+}
+
+.swipe-btn.delete {
+  background: #ff4757;
+}
+
+.todo-card.completed {
+  background: #f5f5f5;
+  opacity: 0.7;
+}
+
+.todo-card.completed .todo-title {
+  color: #999999;
+  text-decoration: line-through;
+}
+
+.todo-card.completed .todo-description {
+  color: #bbbbbb;
+}
+
+.todo-card.completed .todo-meta {
+  color: #cccccc;
+}
+
+.todo-card.completed .circle-icon {
+  border-color: #cccccc;
+}
+
+.todo-card.completed .complete-btn {
+  border-color: #cccccc;
 }
 
 .complete-btn {
@@ -370,6 +668,7 @@ onShow(async () => {
   color: #667eea;
   transition: all 0.3s;
   background: #ffffff;
+  flex-shrink: 0;
 }
 
 .complete-btn.completed {
