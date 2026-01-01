@@ -56,7 +56,7 @@ import { useFamilyStore } from '../../src/stores/family'
 import familyApi from '../../src/api/family'
 import milestoneApi from '../../src/api/milestone'
 import { decryptData } from '../../src/utils/crypto'
-import dayjs from 'dayjs'
+import dayjs from '../../src/utils/dayjs'
 
 const userStore = useUserStore()
 const familyStore = useFamilyStore()
@@ -66,7 +66,7 @@ const selectedYear = ref('')
 const loading = ref(false)
 
 const formatDate = (dateStr) => {
-  return dayjs(dateStr).format('YYYY年MM月DD日')
+  return dayjs.utc(dateStr).utcOffset(8).format('YYYY年MM月DD日')
 }
 
 const onYearChange = (e) => {

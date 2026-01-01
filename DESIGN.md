@@ -33,7 +33,8 @@ frontend/
 │   ├── api/                 # 后端接口定义
 │   │   ├── auth.js
 │   │   ├── family.js
-│   │   └── milestone.js
+│   │   ├── milestone.js
+│   │   └── todo.js
 │   ├── utils/
 │   │   ├── request.js       # 封装 uni.request (带拦截器)
 │   │   ├── crypto.js        # 【核心】所有加解密逻辑封装
@@ -49,9 +50,11 @@ frontend/
 │   │   │   └── index.vue    # 首页：大事记时间轴
 │   │   ├── create/
 │   │   │   └── create.vue   # 发布新大事记
+│   │   ├── todo/
+│   │   │   └── todo.vue     # 待办事项列表
 │   │   └── family/
-│   │   │   ├── create.vue   # 创建新家庭
-│   │   │   └── invite.vue   # 显示邀请信息
+│   │       ├── create.vue   # 创建新家庭
+│   │       └── invite.vue   # 显示邀请信息
 │   ├── App.vue
 │   ├── main.js
 │   └── manifest.json
@@ -186,11 +189,37 @@ frontend/
 
 ### 6.5 创建家庭 (`pages/family/create.vue`)
 
-1. **UI：** 输入“家庭名称”。
+1. **UI：** 输入"家庭名称"。
 2. **流程：**
 * 生成一个随机字符串作为 `FamilyKey` (AES)。
 * 用**我自己的公钥**加密这个 `FamilyKey`。
 * 发送 API：`{ name, encrypted_family_key }`。
+
+### 6.6 待办事项 (`pages/todo/todo.vue`)
+
+1. **UI：**
+* TabBar 导航到"待办事项"页面
+* 卡片式展示待办事项列表
+* 每个卡片包含：标题、描述（可选）、创建者、创建时间
+* 右侧有完成按钮（圆圈图标）
+
+2. **创建待办事项：**
+* 点击"+ 新建"按钮，弹出模态框
+* 输入标题（必填）和描述（可选）
+* 使用**家庭密钥**加密标题和描述
+* 调用 API：`POST /todo/` 发送 `{ family_id, title_ciphertext, description_ciphertext }`
+
+3. **查看待办事项：**
+* 调用 `GET /todo/` 获取待办事项列表
+* 过滤掉已完成的待办事项（`is_completed: true`）
+* 使用**家庭密钥**解密 `title_ciphertext` 和 `description_ciphertext`
+* 以卡片形式展示
+
+4. **标记完成：**
+* 点击卡片右侧的完成按钮
+* 使用**家庭密钥**加密当前的标题和描述
+* 调用 API：`PUT /todo/{id}` 发送 `{ title_ciphertext, description_ciphertext, is_completed: true }`
+* 成功后刷新列表，已完成的待办事项自动隐藏
 
 
 

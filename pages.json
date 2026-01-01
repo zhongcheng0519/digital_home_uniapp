@@ -37,8 +37,34 @@
 			"style": {
 				"navigationBarTitleText": "家庭管理"
 			}
+		},
+		{
+			"path": "pages/todo/todo",
+			"style": {
+				"navigationBarTitleText": "待办事项"
+			}
 		}
 	],
+	"tabBar": {
+		"color": "#999999",
+		"selectedColor": "#667eea",
+		"backgroundColor": "#ffffff",
+		"borderStyle": "black",
+		"list": [
+			{
+				"pagePath": "pages/index/index",
+				"text": "大事记",
+				"iconPath": "static/tabbar/milestone.png",
+				"selectedIconPath": "static/tabbar/milestone-active.png"
+			},
+			{
+				"pagePath": "pages/todo/todo",
+				"text": "待办事项",
+				"iconPath": "static/tabbar/todo.png",
+				"selectedIconPath": "static/tabbar/todo-active.png"
+			}
+		]
+	},
 	"globalStyle": {
 		"navigationBarTextStyle": "black",
 		"navigationBarTitleText": "uni-app",

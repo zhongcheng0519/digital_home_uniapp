@@ -22,6 +22,13 @@
 - AES 加密内容存储
 - 时间轴展示
 
+### 待办事项
+- 创建家庭待办事项
+- 卡片式展示待办列表
+- 标记完成并自动隐藏
+- 标题必填，描述可选
+- AES 加密存储
+
 ### 隐私保护
 - 零知识加密架构
 - 客户端加密，服务器无法解密
@@ -49,6 +56,8 @@ digital_home_uniapp/
 │   │   └── index.vue       # 里程碑列表
 │   ├── create/              # 创建页面
 │   │   └── create.vue      # 创建里程碑
+│   ├── todo/                # 待办事项页面
+│   │   └── todo.vue        # 待办事项列表
 │   └── family/              # 家庭管理页面
 │       ├── create.vue      # 创建家庭
 │       └── invite.vue      # 切换家庭
@@ -56,7 +65,8 @@ digital_home_uniapp/
 │   ├── api/                # API 服务
 │   │   ├── auth.js         # 认证 API
 │   │   ├── family.js       # 家庭 API
-│   │   └── milestone.js    # 里程碑 API
+│   │   ├── milestone.js    # 里程碑 API
+│   │   └── todo.js         # 待办事项 API
 │   ├── stores/             # Pinia 状态管理
 │   │   ├── user.js         # 用户状态
 │   │   └── family.js       # 家庭状态
@@ -130,6 +140,15 @@ npm run build:mp-weixin   # 构建为微信小程序
    - 使用本地私钥解密家庭密钥
    - 使用家庭密钥解密里程碑内容
 
+5. **创建待办事项时**
+   - 使用家庭 AES 密钥加密标题和描述
+   - 加密后的内容上传到服务器
+
+6. **查看待办事项时**
+   - 从服务器获取加密内容
+   - 使用家庭密钥解密标题和描述
+   - 过滤掉已完成的待办事项
+
 ### 状态管理
 
 使用 Pinia 管理应用状态：
@@ -144,6 +163,7 @@ npm run build:mp-weixin   # 构建为微信小程序
 - **Auth API**: 注册、登录、获取用户信息
 - **Family API**: 创建家庭、获取家庭列表、切换家庭
 - **Milestone API**: 创建里程碑、获取里程碑列表
+- **Todo API**: 创建待办事项、获取待办列表、更新待办状态、删除待办事项
 
 ## 配置说明
 
@@ -171,6 +191,7 @@ const BASE_URL = 'https://your-api-domain.com/api'
 - 页面路径
 - 导航栏样式
 - 窗口样式
+- TabBar 配置（大事记、待办事项）
 
 ## 安全注意事项
 

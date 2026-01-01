@@ -48,11 +48,11 @@ import { ref, computed } from 'vue'
 import { useFamilyStore } from '../../src/stores/family'
 import milestoneApi from '../../src/api/milestone'
 import { encryptData } from '../../src/utils/crypto'
-import dayjs from 'dayjs'
+import dayjs from '../../src/utils/dayjs'
 
 const familyStore = useFamilyStore()
 
-const eventDate = ref(dayjs().format('YYYY-MM-DD'))
+const eventDate = ref(dayjs().utcOffset(8).format('YYYY-MM-DD'))
 const content = ref('')
 const loading = ref(false)
 
