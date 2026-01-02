@@ -3,24 +3,17 @@
     <view class="header">
       <text class="title">{{ familyStore.familyName || '数字家' }}</text>
       <view class="header-actions">
-        <text class="action-btn" @click="switchFamily">切换家庭</text>
+        <text class="action-btn" @click="switchFamily" v-if="canSwitchFamily">切换家庭</text>
         <text class="action-btn" @click="goToCreate">发布</text>
       </view>
     </view>
     
     <view class="filter-bar">
-      <picker 
-        mode="date" 
-        fields="year" 
-        :value="selectedYear" 
-        @change="onYearChange"
-      >
-        <view class="filter-item">
-          <text class="filter-label">年份：</text>
-          <text class="filter-value">{{ selectedYear || '全部' }}</text>
-          <text class="filter-arrow">▼</text>
-        </view>
-      </picker>
+      <view class="filter-item" @click="showYearPicker">
+        <text class="filter-label">年份：</text>
+        <text class="filter-value">{{ selectedYear || '全部' }}</text>
+        <text class="filter-arrow">▼</text>
+      </view>
     </view>
     
     <view class="timeline" v-if="milestones.length > 0">
@@ -28,11 +21,13 @@
         class="timeline-item" 
         v-for="milestone in milestones" 
         :key="milestone.id"
+        @longpress="onMilestoneLongPress(milestone)"
       >
         <view class="timeline-dot"></view>
         <view class="timeline-content">
           <view class="timeline-date">{{ formatDate(milestone.event_date) }}</view>
           <view class="timeline-text">{{ milestone.decryptedContent || '解密中...' }}</view>
+          <view class="timeline-hint">长按可操作</view>
         </view>
       </view>
     </view>
@@ -49,7 +44,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { onShow } from '@dcloudio/uni-app'
 import { useUserStore } from '../../src/stores/user'
 import { useFamilyStore } from '../../src/stores/family'
@@ -65,6 +60,10 @@ const milestones = ref([])
 const selectedYear = ref('')
 const loading = ref(false)
 
+const canSwitchFamily = computed(() => {
+  return familyStore.myFamilies.length > 1
+})
+
 const formatDate = (dateStr) => {
   return dayjs.utc(dateStr).utcOffset(8).format('YYYY年MM月DD日')
 }
@@ -72,6 +71,23 @@ const formatDate = (dateStr) => {
 const onYearChange = (e) => {
   selectedYear.value = e.detail.value
   loadMilestones()
+}
+
+const showYearPicker = () => {
+  const items = ['全部', '2025', '2024', '2023', '2022', '2021', '2020']
+  const currentIndex = selectedYear.value ? items.indexOf(selectedYear.value) : 0
+  
+  uni.showActionSheet({
+    itemList: items,
+    success: (res) => {
+      if (res.tapIndex === 0) {
+        selectedYear.value = ''
+      } else {
+        selectedYear.value = items[res.tapIndex]
+      }
+      loadMilestones()
+    }
+  })
 }
 
 const loadFamilies = async () => {
@@ -175,6 +191,23 @@ const goToCreate = () => {
 const switchFamily = () => {
   uni.navigateTo({
     url: '/pages/family/invite'
+  })
+}
+
+const onMilestoneLongPress = (milestone) => {
+  uni.showActionSheet({
+    itemList: ['修改'],
+    success: (res) => {
+      if (res.tapIndex === 0) {
+        navigateToEdit(milestone)
+      }
+    }
+  })
+}
+
+const navigateToEdit = (milestone) => {
+  uni.navigateTo({
+    url: `/pages/create/create?id=${milestone.id}&date=${milestone.event_date}&content=${encodeURIComponent(milestone.decryptedContent || '')}`
   })
 }
 
@@ -316,6 +349,13 @@ onShow(async () => {
   font-size: 28rpx;
   color: #333333;
   line-height: 1.6;
+}
+
+.timeline-hint {
+  font-size: 22rpx;
+  color: #b3b3b3;
+  margin-top: 16rpx;
+  text-align: right;
 }
 
 .empty {

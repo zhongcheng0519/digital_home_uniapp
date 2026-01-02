@@ -7,5 +7,9 @@ export default {
   
   getMilestones(params) {
     return request.get('/milestone/', params)
+  },
+  
+  updateMilestone(id, data) {
+    return request.put(`/milestone/${id}`, data)
   }
 }

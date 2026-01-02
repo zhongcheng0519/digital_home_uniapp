@@ -19,13 +19,18 @@
       
       <view class="form-item">
         <text class="label">密码</text>
-        <input 
-          class="input" 
-          type="password" 
-          v-model="password" 
-          placeholder="请输入密码"
-          maxlength="20"
-        />
+        <view class="password-wrapper">
+          <input 
+            class="input" 
+            :type="showPassword ? 'text' : 'password'" 
+            v-model="password" 
+            placeholder="请输入密码"
+            maxlength="20"
+          />
+          <text class="password-toggle" @click="showPassword = !showPassword">
+            {{ showPassword ? '👁️' : '👁️‍🗨️' }}
+          </text>
+        </view>
       </view>
       
       <button 
@@ -55,6 +60,7 @@ const familyStore = useFamilyStore()
 const phone = ref('')
 const password = ref('')
 const loading = ref(false)
+const showPassword = ref(false)
 
 const validateForm = () => {
   if (!phone.value) {
@@ -165,12 +171,26 @@ const goToRegister = () => {
 .input {
   width: 100%;
   height: 88rpx;
-  padding: 0 24rpx;
+  padding: 0 80rpx 0 24rpx;
   font-size: 28rpx;
   background: #f5f5f5;
   border-radius: 12rpx;
   border: none;
   box-sizing: border-box;
+}
+
+.password-wrapper {
+  position: relative;
+}
+
+.password-toggle {
+  position: absolute;
+  right: 24rpx;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 36rpx;
+  padding: 10rpx;
+  color: #999999;
 }
 
 .btn-login {

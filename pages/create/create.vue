@@ -1,7 +1,7 @@
 <template>
   <view class="create-container">
     <view class="header">
-      <text class="title">发布大事记</text>
+      <text class="title">{{ isEdit ? '编辑大事记' : '发布大事记' }}</text>
       <text class="back-btn" @click="goBack">取消</text>
     </view>
     
@@ -37,7 +37,7 @@
         :disabled="loading || !canSubmit" 
         @click="handleSubmit"
       >
-        {{ loading ? '发布中...' : '发布' }}
+        {{ loading ? (isEdit ? '保存中...' : '发布中...') : (isEdit ? '保存' : '发布') }}
       </button>
     </view>
   </view>
@@ -45,6 +45,7 @@
 
 <script setup>
 import { ref, computed } from 'vue'
+import { onLoad } from '@dcloudio/uni-app'
 import { useFamilyStore } from '../../src/stores/family'
 import milestoneApi from '../../src/api/milestone'
 import { encryptData } from '../../src/utils/crypto'
@@ -55,9 +56,30 @@ const familyStore = useFamilyStore()
 const eventDate = ref(dayjs().utcOffset(8).format('YYYY-MM-DD'))
 const content = ref('')
 const loading = ref(false)
+const milestoneId = ref(null)
+
+const isEdit = computed(() => {
+  return milestoneId.value !== null
+})
 
 const canSubmit = computed(() => {
-  return eventDate.value && content.value.trim().length > 0
+  return eventDate.value && content.value && content.value.trim().length > 0
+})
+
+onLoad((options) => {
+  if (options.id) {
+    milestoneId.value = parseInt(options.id)
+  }
+  if (options.date) {
+    eventDate.value = options.date
+  }
+  if (options.content) {
+    try {
+      content.value = decodeURIComponent(options.content)
+    } catch (e) {
+      content.value = options.content || ''
+    }
+  }
 })
 
 const onDateChange = (e) => {
@@ -80,21 +102,28 @@ const handleSubmit = async () => {
   try {
     const contentCiphertext = encryptData(content.value, familyStore.currentFamilyKey)
     
-    await milestoneApi.createMilestone({
-      family_id: familyStore.familyId,
-      event_date: eventDate.value,
-      content_ciphertext: contentCiphertext
-    })
-    
-    uni.showToast({ title: '发布成功', icon: 'success' })
+    if (isEdit.value) {
+      await milestoneApi.updateMilestone(milestoneId.value, {
+        event_date: eventDate.value,
+        content_ciphertext: contentCiphertext
+      })
+      uni.showToast({ title: '保存成功', icon: 'success' })
+    } else {
+      await milestoneApi.createMilestone({
+        family_id: familyStore.familyId,
+        event_date: eventDate.value,
+        content_ciphertext: contentCiphertext
+      })
+      uni.showToast({ title: '发布成功', icon: 'success' })
+    }
     
     setTimeout(() => {
       uni.navigateBack()
     }, 1500)
     
   } catch (error) {
-    console.error('发布失败:', error)
-    const message = error.message || error.detail || '发布失败'
+    console.error(isEdit.value ? '保存失败:' : '发布失败:', error)
+    const message = error.message || error.detail || (isEdit.value ? '保存失败' : '发布失败')
     uni.showToast({ title: message, icon: 'none' })
   } finally {
     loading.value = false
@@ -102,7 +131,7 @@ const handleSubmit = async () => {
 }
 
 const goBack = () => {
-  if (content.value.trim()) {
+  if (content.value.trim() && !isEdit.value) {
     uni.showModal({
       title: '提示',
       content: '确定要放弃编辑吗？',

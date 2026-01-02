@@ -387,6 +387,47 @@ GET /api/v1/milestone/?family_id=1&year=2024
 
 ---
 
+### 3. 更新里程碑
+
+**接口**: `PUT /api/v1/milestone/{milestone_id}`
+
+**需要认证**: 是
+
+**权限**: 仅家庭成员可操作
+
+**路径参数**:
+- `milestone_id` (必填): 里程碑ID
+
+**请求参数**:
+```json
+{
+  "event_date": "2025-02-01",
+  "content_ciphertext": "new_encrypted_content_base64"
+}
+```
+
+**响应**:
+```json
+{
+  "id": 1,
+  "family_id": 1,
+  "creator_id": 1,
+  "event_date": "2025-02-01",
+  "content_ciphertext": "new_encrypted_content_base64",
+  "created_at": "2024-01-01T10:00:00"
+}
+```
+
+**错误响应**:
+- `403 Forbidden`: 不是该家庭成员
+- `404 Not Found`: 里程碑不存在
+
+**说明**: 
+- 所有字段都是可选的，只更新提供的字段
+- 任意家庭成员都可以更新里程碑
+
+---
+
 ## 待办事项模块 (Todo)
 
 ### 1. 创建待办事项
@@ -583,6 +624,11 @@ DELETE /api/v1/todo/1
 
 1. 用家庭密钥加密里程碑内容，得到 `content_ciphertext`
 2. 发送创建里程碑请求
+
+### 更新里程碑流程
+
+1. 用家庭密钥加密新的内容（如果更新），得到 `content_ciphertext`
+2. 发送更新里程碑请求
 
 ### 创建待办事项流程
 
