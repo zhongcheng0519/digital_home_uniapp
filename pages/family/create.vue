@@ -77,7 +77,7 @@ const handleSubmit = async () => {
     familyStore.addFamily({
       ...family,
       encrypted_family_key: encryptedFamilyKey,
-      role: 'owner'
+      role: '男主人'
     })
     
     uni.hideLoading()

@@ -188,6 +188,12 @@ const loadTodos = async () => {
         }
         return true
       })
+      .sort((a, b) => {
+        if (a.is_completed === b.is_completed) {
+          return new Date(b.created_at) - new Date(a.created_at)
+        }
+        return a.is_completed ? 1 : -1
+      })
       .map(item => ({
         ...item,
         decryptedTitle: '',

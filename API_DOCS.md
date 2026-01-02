@@ -38,7 +38,7 @@ Digital Home 是一个基于 FastAPI 的数字家庭后端服务，实现了零�
 #### FamilyMember (家庭成员)
 - `family_id`: 家庭ID
 - `user_id`: 用户ID
-- `role`: 角色（owner/member）
+- `role`: 角色（男主人/女主人/儿子/女儿）
 - `encrypted_family_key`: 加密的家庭密钥
 
 #### Milestone (里程碑)
@@ -247,7 +247,8 @@ GET /api/v1/auth/username?user_id=1
 {
   "family_id": 1,
   "target_phone": "13900139000",
-  "encrypted_key_for_target": "encrypted_key_for_target_base64"
+  "encrypted_key_for_target": "encrypted_key_for_target_base64",
+  "role": "儿子"
 }
 ```
 
@@ -296,6 +297,51 @@ GET /api/v1/auth/username?user_id=1
 ```
 
 **说明**: 返回当前用户所属的所有家庭，包含加密的家庭密钥
+
+---
+
+### 4. 获取家庭成员列表
+
+**接口**: `GET /api/v1/family/{family_id}/members`
+
+**需要认证**: 是
+
+**权限**: 仅家庭成员可查看
+
+**路径参数**:
+- `family_id` (必填): 家庭ID
+
+**请求示例**:
+```
+GET /api/v1/family/1/members
+```
+
+**响应**:
+```json
+[
+  {
+    "user_id": 1,
+    "phone": "13800138000",
+    "username": "张三",
+    "role": "owner"
+  },
+  {
+    "user_id": 2,
+    "phone": "13900139000",
+    "username": "李四",
+    "role": "member"
+  }
+]
+```
+
+**错误响应**:
+- `403 Forbidden`: 不是该家庭成员
+- `404 Not Found`: 家庭不存在
+
+**说明**: 
+- 返回指定家庭的所有成员信息
+- 包含用户的 ID、手机号、用户名以及在家庭中的角色
+- 只有家庭成员才能查看成员列表
 
 ---
 

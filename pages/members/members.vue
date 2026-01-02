@@ -1,33 +1,33 @@
 <template>
-  <view class="invite-container">
+  <view class="members-container">
     <view class="header">
-      <text class="title">我的家庭</text>
-      <text class="back-btn" @click="goBack">返回</text>
+      <text class="title">家庭成员</text>
+      <text class="family-name">{{ familyStore.familyName || '未选择家庭' }}</text>
     </view>
     
-    <view class="family-list" v-if="families.length > 0">
-      <view 
-        class="family-item" 
-        v-for="family in families" 
-        :key="family.id"
-        :class="{ active: currentFamilyId === family.id }"
-        @click="selectFamily(family)"
-      >
-        <view class="family-info">
-          <text class="family-name">{{ family.name }}</text>
-          <text class="family-role">{{ family.role }}</text>
+    <view class="members-list" v-if="members.length > 0">
+      <view class="member-item" v-for="member in members" :key="member.user_id">
+        <view class="member-avatar">
+          <text class="avatar-text">{{ getAvatarText(member.username) }}</text>
         </view>
-        <text class="check-icon" v-if="currentFamilyId === family.id">✓</text>
+        <view class="member-info">
+          <text class="member-name">{{ member.username }}</text>
+          <text class="member-phone">{{ maskPhone(member.phone) }}</text>
+          <text class="member-role" :class="member.role">{{ member.role }}</text>
+        </view>
       </view>
     </view>
     
-    <view class="empty" v-else>
-      <text class="empty-text">暂无家庭</text>
+    <view class="empty" v-else-if="!loading">
+      <text class="empty-text">暂无成员</text>
     </view>
     
-    <view class="actions">
-      <button class="btn-invite" @click="showInviteModal" v-if="canInvite">邀请成员</button>
-      <button class="btn-create" @click="goToCreateFamily">创建新家庭</button>
+    <view class="loading" v-if="loading">
+      <text>加载中...</text>
+    </view>
+    
+    <view class="invite-btn-container" v-if="isOwner && !loading">
+      <button class="btn-invite" @click="showInviteModal">邀请成员</button>
     </view>
     
     <view class="modal-overlay" v-if="showInvite" @click="hideInviteModal">
@@ -74,25 +74,26 @@
 
 <script setup>
 import { ref, computed, onMounted } from 'vue'
-import { useFamilyStore } from '../../src/stores/family'
+import { onShow } from '@dcloudio/uni-app'
 import { useUserStore } from '../../src/stores/user'
+import { useFamilyStore } from '../../src/stores/family'
 import familyApi from '../../src/api/family'
 import { encryptKeyWithRSA } from '../../src/utils/crypto'
 
-const familyStore = useFamilyStore()
 const userStore = useUserStore()
+const familyStore = useFamilyStore()
 
-const families = ref([])
-const currentFamilyId = ref(null)
+const members = ref([])
+const loading = ref(false)
 const showInvite = ref(false)
 const invitePhone = ref('')
-const loading = ref(false)
+const inviting = ref(false)
 const selectedRole = ref('')
 const selectedRoleIndex = ref(-1)
 const roleOptions = ['儿子', '女儿', '爸爸', '妈妈', '岳父', '岳母']
 
-const canInvite = computed(() => {
-  const currentFamily = families.value.find(f => f.id === currentFamilyId.value)
+const isOwner = computed(() => {
+  const currentFamily = familyStore.myFamilies.find(f => f.id === familyStore.familyId)
   return currentFamily && ['男主人', '女主人'].includes(currentFamily.role)
 })
 
@@ -100,51 +101,63 @@ const canInviteSubmit = computed(() => {
   return invitePhone.value && /^1[3-9]\d{9}$/.test(invitePhone.value) && selectedRole.value
 })
 
-const selectFamily = async (family) => {
-  if (currentFamilyId.value === family.id) {
+const getAvatarText = (username) => {
+  if (!username) return '?'
+  return username.charAt(0).toUpperCase()
+}
+
+const maskPhone = (phone) => {
+  if (!phone) return ''
+  return phone.replace(/(\d{3})\d{4}(\d{4})/, '$1****$2')
+}
+
+const loadMembers = async () => {
+  if (!familyStore.hasCurrentFamily) {
+    uni.showModal({
+      title: '提示',
+      content: '您还没有选择家庭，是否立即创建？',
+      success: (res) => {
+        if (res.confirm) {
+          uni.navigateTo({
+            url: '/pages/family/create'
+          })
+        }
+      }
+    })
     return
   }
   
+  loading.value = true
+  
   try {
-    uni.showLoading({ title: '切换中...' })
-    
-    await familyStore.unlockFamily(family.encrypted_family_key, userStore.myPrivateKey)
-    familyStore.setCurrentFamily(family)
-    currentFamilyId.value = family.id
-    
-    uni.hideLoading()
-    uni.showToast({ title: '切换成功', icon: 'success' })
-    
-    setTimeout(() => {
-      uni.navigateBack()
-    }, 1500)
-    
+    const data = await familyApi.getFamilyMembers(familyStore.familyId)
+    members.value = data
   } catch (error) {
-    uni.hideLoading()
-    console.error('切换家庭失败:', error)
-    uni.showToast({ title: '切换失败，无法解密家庭数据', icon: 'none' })
-  }
-}
-
-const loadFamilies = async () => {
-  try {
-    const data = await familyApi.getMyFamilies()
-    families.value = data
-    currentFamilyId.value = familyStore.currentFamily?.id
-  } catch (error) {
-    console.error('加载家庭列表失败:', error)
+    console.error('加载成员列表失败:', error)
     uni.showToast({ title: '加载失败', icon: 'none' })
+  } finally {
+    loading.value = false
   }
 }
 
 const showInviteModal = () => {
   showInvite.value = true
   invitePhone.value = ''
+  selectedRole.value = ''
+  selectedRoleIndex.value = -1
 }
 
 const hideInviteModal = () => {
   showInvite.value = false
   invitePhone.value = ''
+  selectedRole.value = ''
+  selectedRoleIndex.value = -1
+}
+
+const onRoleChange = (e) => {
+  const index = e.detail.value
+  selectedRoleIndex.value = index
+  selectedRole.value = roleOptions[index]
 }
 
 const handleInvite = async () => {
@@ -158,7 +171,7 @@ const handleInvite = async () => {
     return
   }
   
-  loading.value = true
+  inviting.value = true
   
   try {
     const publicKeyResponse = await familyApi.getUserPublicKey(invitePhone.value)
@@ -172,13 +185,15 @@ const handleInvite = async () => {
     await familyApi.addMember({
       family_id: familyStore.familyId,
       target_phone: invitePhone.value,
-      encrypted_key_for_target: encryptedKeyForTarget
+      encrypted_key_for_target: encryptedKeyForTarget,
+      role: selectedRole.value
     })
     
     uni.showToast({ title: '邀请成功', icon: 'success' })
     
     setTimeout(() => {
       hideInviteModal()
+      loadMembers()
     }, 1500)
     
   } catch (error) {
@@ -186,93 +201,115 @@ const handleInvite = async () => {
     const message = error.message || error.detail || '邀请失败'
     uni.showToast({ title: message, icon: 'none' })
   } finally {
-    loading.value = false
+    inviting.value = false
   }
 }
 
-const goToCreateFamily = () => {
-  uni.navigateTo({
-    url: '/pages/family/create'
-  })
-}
+onMounted(async () => {
+  userStore.loadFromStorage()
+  
+  if (!userStore.isLoggedIn) {
+    uni.reLaunch({
+      url: '/pages/auth/login'
+    })
+    return
+  }
+  
+  await loadMembers()
+})
 
-const goBack = () => {
-  uni.navigateBack()
-}
-
-onMounted(() => {
-  loadFamilies()
+onShow(async () => {
+  if (userStore.isLoggedIn && familyStore.hasCurrentFamily) {
+    await loadMembers()
+  }
 })
 </script>
 
 <style scoped>
-.invite-container {
+.members-container {
   min-height: 100vh;
   background: #f5f5f5;
+  padding-bottom: 120rpx;
 }
 
 .header {
-  background: #ffffff;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   padding: 40rpx;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  border-bottom: 1rpx solid #e5e5e5;
 }
 
 .title {
   font-size: 36rpx;
   font-weight: bold;
-  color: #333333;
+  color: #ffffff;
 }
 
-.back-btn {
+.family-name {
   font-size: 28rpx;
-  color: #667eea;
+  color: rgba(255, 255, 255, 0.9);
 }
 
-.family-list {
+.members-list {
   padding: 20rpx;
 }
 
-.family-item {
+.member-item {
   background: #ffffff;
   border-radius: 16rpx;
   padding: 30rpx;
   margin-bottom: 20rpx;
   display: flex;
-  justify-content: space-between;
   align-items: center;
-  border: 2rpx solid transparent;
+  box-shadow: 0 2rpx 12rpx rgba(0, 0, 0, 0.05);
 }
 
-.family-item.active {
-  border-color: #667eea;
-  background: #f0f4ff;
+.member-avatar {
+  width: 80rpx;
+  height: 80rpx;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-right: 24rpx;
 }
 
-.family-info {
+.avatar-text {
+  font-size: 32rpx;
+  font-weight: bold;
+  color: #ffffff;
+}
+
+.member-info {
   flex: 1;
+  display: flex;
+  flex-direction: column;
 }
 
-.family-name {
-  display: block;
+.member-name {
   font-size: 32rpx;
   color: #333333;
   font-weight: 500;
-  margin-bottom: 10rpx;
+  margin-bottom: 8rpx;
 }
 
-.family-role {
-  display: block;
-  font-size: 24rpx;
+.member-phone {
+  font-size: 26rpx;
   color: #999999;
+  margin-bottom: 8rpx;
 }
 
-.check-icon {
-  font-size: 40rpx;
+.member-role {
+  font-size: 24rpx;
   color: #667eea;
-  font-weight: bold;
+  font-weight: 500;
+}
+
+.member-role.男主人,
+.member-role.女主人 {
+  color: #ff6b6b;
 }
 
 .empty {
@@ -288,7 +325,16 @@ onMounted(() => {
   color: #999999;
 }
 
-.actions {
+.loading {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 100rpx;
+  font-size: 28rpx;
+  color: #999999;
+}
+
+.invite-btn-container {
   position: fixed;
   bottom: 0;
   left: 0;
@@ -296,23 +342,9 @@ onMounted(() => {
   background: #ffffff;
   padding: 30rpx 40rpx;
   border-top: 1rpx solid #e5e5e5;
-  display: flex;
-  flex-direction: column;
-  gap: 20rpx;
 }
 
 .btn-invite {
-  width: 100%;
-  height: 88rpx;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: #ffffff;
-  font-size: 32rpx;
-  font-weight: bold;
-  border-radius: 12rpx;
-  border: none;
-}
-
-.btn-create {
   width: 100%;
   height: 88rpx;
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
@@ -388,6 +420,29 @@ onMounted(() => {
   font-size: 28rpx;
   color: #333333;
   box-sizing: border-box;
+}
+
+.form-item .picker {
+  width: 100%;
+  height: 80rpx;
+  background: #f5f5f5;
+  border-radius: 12rpx;
+  padding: 0 24rpx;
+  font-size: 28rpx;
+  color: #333333;
+  box-sizing: border-box;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.form-item .picker .placeholder {
+  color: #999999;
+}
+
+.form-item .picker .picker-arrow {
+  color: #999999;
+  font-size: 20rpx;
 }
 
 .modal-footer {

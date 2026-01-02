@@ -52,6 +52,8 @@ frontend/
 │   │   │   └── create.vue   # 发布新大事记
 │   │   ├── todo/
 │   │   │   └── todo.vue     # 待办事项列表
+│   │   ├── members/
+│   │   │   └── members.vue  # 家庭成员列表
 │   │   └── family/
 │   │       ├── create.vue   # 创建新家庭
 │   │       └── invite.vue   # 显示邀请信息
@@ -220,6 +222,33 @@ frontend/
 * 使用**家庭密钥**加密当前的标题和描述
 * 调用 API：`PUT /todo/{id}` 发送 `{ title_ciphertext, description_ciphertext, is_completed: true }`
 * 成功后刷新列表，已完成的待办事项自动隐藏
+
+### 6.7 家庭成员 (`pages/members/members.vue`)
+
+1. **UI：**
+* TabBar 导航到"家庭成员"页面
+* 卡片式展示家庭成员列表
+* 每个卡片包含：头像（用户名首字母）、用户名、手机号（脱敏）、角色（直接显示角色字段）
+* 底部固定"邀请成员"按钮（仅男主人/女主人可见）
+
+2. **查看成员：**
+* 调用 `GET /family/{family_id}/members` 获取成员列表
+* 显示所有成员信息
+* 手机号脱敏显示（如：138****8000）
+* 男主人/女主人角色用红色标识，其他角色用紫色标识
+
+3. **邀请成员（仅男主人/女主人）：**
+* 点击底部"邀请成员"按钮，弹出模态框
+* 输入目标用户手机号
+* 选择角色（儿子/女儿/爸爸/妈妈/岳父/岳母）
+* 调用 `GET /auth/public-key?phone={phone}` 获取目标用户公钥
+* 使用**家庭密钥**加密家庭密钥，得到 `encrypted_key_for_target`
+* 调用 API：`POST /family/member` 发送 `{ family_id, target_phone, encrypted_key_for_target, role }`
+* 成功后刷新成员列表
+
+4. **权限控制：**
+* "邀请成员"按钮仅对当前家庭的男主人/女主人可见
+* 其他角色无法看到邀请按钮
 
 
 

@@ -43,6 +43,12 @@
 			"style": {
 				"navigationBarTitleText": "待办事项"
 			}
+		},
+		{
+			"path": "pages/members/members",
+			"style": {
+				"navigationBarTitleText": "家庭成员"
+			}
 		}
 	],
 	"tabBar": {
@@ -62,6 +68,12 @@
 				"text": "待办事项",
 				"iconPath": "static/tabbar/todo.png",
 				"selectedIconPath": "static/tabbar/todo-active.png"
+			},
+			{
+				"pagePath": "pages/members/members",
+				"text": "家庭成员",
+				"iconPath": "static/tabbar/members.png",
+				"selectedIconPath": "static/tabbar/members-active.png"
 			}
 		]
 	},

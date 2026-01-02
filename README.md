@@ -29,6 +29,13 @@
 - 标题必填，描述可选
 - AES 加密存储
 
+### 家庭成员
+- 查看家庭成员列表
+- 显示成员头像、用户名、手机号（脱敏）
+- 区分户主和普通成员角色
+- 户主可邀请新成员
+- 手机号脱敏显示（如：138****8000）
+
 ### 隐私保护
 - 零知识加密架构
 - 客户端加密，服务器无法解密
@@ -58,6 +65,8 @@ digital_home_uniapp/
 │   │   └── create.vue      # 创建里程碑
 │   ├── todo/                # 待办事项页面
 │   │   └── todo.vue        # 待办事项列表
+│   ├── members/             # 家庭成员页面
+│   │   └── members.vue    # 成员列表
 │   └── family/              # 家庭管理页面
 │       ├── create.vue      # 创建家庭
 │       └── invite.vue      # 切换家庭
@@ -149,6 +158,19 @@ npm run build:mp-weixin   # 构建为微信小程序
    - 使用家庭密钥解密标题和描述
    - 过滤掉已完成的待办事项
 
+7. **查看家庭成员时**
+   - 调用 `GET /family/{family_id}/members` 获取成员列表
+   - 显示成员头像、用户名、手机号（脱敏）、角色（直接显示角色字段）
+   - 男主人/女主人角色用红色标识，其他角色用紫色标识
+
+8. **邀请新成员时（仅男主人/女主人）**
+   - 输入目标用户手机号
+   - 选择角色（儿子/女儿/爸爸/妈妈/岳父/岳母）
+   - 调用 `GET /auth/public-key?phone={phone}` 获取目标用户公钥
+   - 使用家庭密钥加密家庭密钥，得到 `encrypted_key_for_target`
+   - 调用 `POST /family/member` 发送邀请请求 `{ family_id, target_phone, encrypted_key_for_target, role }`
+   - 成功后刷新成员列表
+
 ### 状态管理
 
 使用 Pinia 管理应用状态：
@@ -161,7 +183,7 @@ npm run build:mp-weixin   # 构建为微信小程序
 模块化的 API 服务封装：
 
 - **Auth API**: 注册、登录、获取用户信息
-- **Family API**: 创建家庭、获取家庭列表、切换家庭
+- **Family API**: 创建家庭、获取家庭列表、切换家庭、获取成员列表、邀请成员
 - **Milestone API**: 创建里程碑、获取里程碑列表
 - **Todo API**: 创建待办事项、获取待办列表、更新待办状态、删除待办事项
 
@@ -191,7 +213,7 @@ const BASE_URL = 'https://your-api-domain.com/api'
 - 页面路径
 - 导航栏样式
 - 窗口样式
-- TabBar 配置（大事记、待办事项）
+- TabBar 配置（大事记、家庭成员、待办事项）
 
 ## 安全注意事项
 

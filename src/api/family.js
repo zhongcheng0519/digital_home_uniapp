@@ -15,5 +15,9 @@ export default {
   
   getUserPublicKey(phone) {
     return request.get(`/auth/public-key?phone=${phone}`)
+  },
+  
+  getFamilyMembers(familyId) {
+    return request.get(`/family/${familyId}/members`)
   }
 }
