@@ -2,7 +2,10 @@
   <view class="todo-container">
     <view class="header">
       <text class="title">待办事项</text>
-      <text class="add-btn" @click="showAddModal = true">+ 新建</text>
+    </view>
+    
+    <view class="fab" @click="showAddModal = true">
+      <text class="fab-icon">+</text>
     </view>
     
     <view class="todo-list" v-if="todos.length > 0">
@@ -735,6 +738,34 @@ onShow(async () => {
   color: #999999;
 }
 
+.fab {
+  position: fixed;
+  right: 40rpx;
+  bottom: 40rpx;
+  width: 120rpx;
+  height: 120rpx;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 8rpx 24rpx rgba(102, 126, 234, 0.4);
+  z-index: 100;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.fab:active {
+  transform: scale(0.95);
+  box-shadow: 0 4rpx 16rpx rgba(102, 126, 234, 0.3);
+}
+
+.fab-icon {
+  font-size: 60rpx;
+  color: #ffffff;
+  font-weight: bold;
+  line-height: 1;
+}
+
 .modal {
   position: fixed;
   top: 0;
@@ -836,5 +867,33 @@ onShow(async () => {
 .modal-btn.confirm {
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   color: #ffffff;
+}
+
+.fab {
+  position: fixed;
+  right: 40rpx;
+  bottom: 40rpx;
+  width: 120rpx;
+  height: 120rpx;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 8rpx 24rpx rgba(102, 126, 234, 0.4);
+  z-index: 100;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.fab:active {
+  transform: scale(0.95);
+  box-shadow: 0 4rpx 16rpx rgba(102, 126, 234, 0.3);
+}
+
+.fab-icon {
+  font-size: 60rpx;
+  color: #ffffff;
+  font-weight: bold;
+  line-height: 1;
 }
 </style>

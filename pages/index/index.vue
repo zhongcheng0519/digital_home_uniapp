@@ -4,7 +4,6 @@
       <text class="title">{{ familyStore.familyName || '数字家' }}</text>
       <view class="header-actions">
         <text class="action-btn" @click="switchFamily" v-if="canSwitchFamily">切换家庭</text>
-        <text class="action-btn" @click="goToCreate">发布</text>
       </view>
     </view>
     
@@ -39,6 +38,10 @@
     
     <view class="loading" v-if="loading">
       <text>加载中...</text>
+    </view>
+    
+    <view class="fab" @click="goToCreate">
+      <text class="fab-icon">+</text>
     </view>
   </view>
 </template>
@@ -384,5 +387,33 @@ onShow(async () => {
   padding: 100rpx;
   font-size: 28rpx;
   color: #999999;
+}
+
+.fab {
+  position: fixed;
+  right: 40rpx;
+  bottom: 40rpx;
+  width: 120rpx;
+  height: 120rpx;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 8rpx 24rpx rgba(102, 126, 234, 0.4);
+  z-index: 100;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.fab:active {
+  transform: scale(0.95);
+  box-shadow: 0 4rpx 16rpx rgba(102, 126, 234, 0.3);
+}
+
+.fab-icon {
+  font-size: 60rpx;
+  color: #ffffff;
+  font-weight: bold;
+  line-height: 1;
 }
 </style>
