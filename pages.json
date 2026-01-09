@@ -49,6 +49,12 @@
 			"style": {
 				"navigationBarTitleText": "家庭成员"
 			}
+		},
+		{
+			"path": "pages/note/note",
+			"style": {
+				"navigationBarTitleText": "便利贴"
+			}
 		}
 	],
 	"tabBar": {
@@ -68,6 +74,12 @@
 				"text": "待办事项",
 				"iconPath": "static/tabbar/todo.png",
 				"selectedIconPath": "static/tabbar/todo-active.png"
+			},
+			{
+				"pagePath": "pages/note/note",
+				"text": "便利贴",
+				"iconPath": "static/tabbar/note.png",
+				"selectedIconPath": "static/tabbar/note-active.png"
 			},
 			{
 				"pagePath": "pages/members/members",

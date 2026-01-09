@@ -34,7 +34,8 @@ frontend/
 │   │   ├── auth.js
 │   │   ├── family.js
 │   │   ├── milestone.js
-│   │   └── todo.js
+│   │   ├── todo.js
+│   │   └── note.js
 │   ├── utils/
 │   │   ├── request.js       # 封装 uni.request (带拦截器)
 │   │   ├── crypto.js        # 【核心】所有加解密逻辑封装
@@ -52,6 +53,8 @@ frontend/
 │   │   │   └── create.vue   # 发布新大事记
 │   │   ├── todo/
 │   │   │   └── todo.vue     # 待办事项列表
+│   │   ├── note/
+│   │   │   └── note.vue     # 便利贴列表
 │   │   ├── members/
 │   │   │   └── members.vue  # 家庭成员列表
 │   │   └── family/
@@ -249,6 +252,43 @@ frontend/
 4. **权限控制：**
 * "邀请成员"按钮仅对当前家庭的男主人/女主人可见
 * 其他角色无法看到邀请按钮
+
+### 6.8 便利贴 (`pages/note/note.vue`)
+
+1. **UI：**
+* TabBar 导航到"便利贴"页面
+* 顶部有分类筛选标签：全部、地址信息、药方
+* 卡片式展示便利贴列表
+* 每个卡片包含：标题、内容、创建者、创建时间
+* 不同分类的便利贴使用不同颜色背景：
+  - 地址信息：黄色背景 (#FFF9C4)
+  - 药方：绿色背景 (#C8E6C9)
+* 右上角有编辑和删除按钮
+
+2. **创建便利贴：**
+* 点击"+ 新建"按钮，弹出模态框
+* 输入标题（必填）和内容（必填）
+* 选择分类（地址信息/药方，默认为地址信息）
+* 使用**家庭密钥**加密标题和内容
+* 调用 API：`POST /note/` 发送 `{ family_id, title_ciphertext, content_ciphertext, category }`
+
+3. **查看便利贴：**
+* 调用 `GET /note/` 获取便利贴列表
+* 根据当前选中的分类筛选（全部/地址信息/药方）
+* 使用**家庭密钥**解密 `title_ciphertext` 和 `content_ciphertext`
+* 以卡片形式展示，根据分类显示不同背景色
+
+4. **编辑便利贴：**
+* 点击卡片右上角的编辑按钮，弹出编辑模态框
+* 修改标题、内容和分类
+* 使用**家庭密钥**加密新的标题和内容
+* 调用 API：`PUT /note/{id}` 发送 `{ title_ciphertext, content_ciphertext, category }`
+* 成功后刷新列表
+
+5. **删除便利贴：**
+* 点击卡片右上角的删除按钮
+* 确认后调用 API：`DELETE /note/{id}`
+* 成功后刷新列表
 
 
 
