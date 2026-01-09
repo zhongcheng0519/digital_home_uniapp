@@ -1,7 +1,41 @@
 <template>
   <view class="todo-container">
-    <view class="header">
-      <text class="title">待办事项</text>
+    <view class="category-filter">
+      <view 
+        class="category-item" 
+        :class="{ active: selectedCategory === '' }"
+        @click="selectCategory('')"
+      >
+        <text class="category-text">全部</text>
+      </view>
+      <view 
+        class="category-item" 
+        :class="{ active: selectedCategory === '生活' }"
+        @click="selectCategory('生活')"
+      >
+        <text class="category-text">生活</text>
+      </view>
+      <view 
+        class="category-item" 
+        :class="{ active: selectedCategory === '学习' }"
+        @click="selectCategory('学习')"
+      >
+        <text class="category-text">学习</text>
+      </view>
+      <view 
+        class="category-item" 
+        :class="{ active: selectedCategory === '运动' }"
+        @click="selectCategory('运动')"
+      >
+        <text class="category-text">运动</text>
+      </view>
+      <view 
+        class="category-item" 
+        :class="{ active: selectedCategory === '心愿' }"
+        @click="selectCategory('心愿')"
+      >
+        <text class="category-text">心愿</text>
+      </view>
     </view>
     
     <view class="fab" @click="showAddModal = true">
@@ -35,7 +69,12 @@
               </view>
             </view>
             <view class="todo-main">
-              <view class="todo-title">{{ todo.decryptedTitle || '解密中...' }}</view>
+              <view class="todo-header">
+                <view class="todo-title">{{ todo.decryptedTitle || '解密中...' }}</view>
+                <view class="todo-category" :class="'category-' + todo.category">
+                  {{ todo.category || '生活' }}
+                </view>
+              </view>
               <view class="todo-description" v-if="todo.decryptedDescription">
                 {{ todo.decryptedDescription }}
               </view>
@@ -90,6 +129,39 @@
               :maxlength="500"
             />
           </view>
+          <view class="form-item">
+            <text class="form-label">分类</text>
+            <view class="category-selector">
+              <view 
+                class="category-option" 
+                :class="{ selected: newTodo.category === '生活' }"
+                @click="newTodo.category = '生活'"
+              >
+                <text class="category-option-text">生活</text>
+              </view>
+              <view 
+                class="category-option" 
+                :class="{ selected: newTodo.category === '学习' }"
+                @click="newTodo.category = '学习'"
+              >
+                <text class="category-option-text">学习</text>
+              </view>
+              <view 
+                class="category-option" 
+                :class="{ selected: newTodo.category === '运动' }"
+                @click="newTodo.category = '运动'"
+              >
+                <text class="category-option-text">运动</text>
+              </view>
+              <view 
+                class="category-option" 
+                :class="{ selected: newTodo.category === '心愿' }"
+                @click="newTodo.category = '心愿'"
+              >
+                <text class="category-option-text">心愿</text>
+              </view>
+            </view>
+          </view>
         </view>
         <view class="modal-footer">
           <text class="modal-btn cancel" @click="showAddModal = false">取消</text>
@@ -122,6 +194,39 @@
               :maxlength="500"
             />
           </view>
+          <view class="form-item">
+            <text class="form-label">分类</text>
+            <view class="category-selector">
+              <view 
+                class="category-option" 
+                :class="{ selected: editingTodo.category === '生活' }"
+                @click="editingTodo.category = '生活'"
+              >
+                <text class="category-option-text">生活</text>
+              </view>
+              <view 
+                class="category-option" 
+                :class="{ selected: editingTodo.category === '学习' }"
+                @click="editingTodo.category = '学习'"
+              >
+                <text class="category-option-text">学习</text>
+              </view>
+              <view 
+                class="category-option" 
+                :class="{ selected: editingTodo.category === '运动' }"
+                @click="editingTodo.category = '运动'"
+              >
+                <text class="category-option-text">运动</text>
+              </view>
+              <view 
+                class="category-option" 
+                :class="{ selected: editingTodo.category === '心愿' }"
+                @click="editingTodo.category = '心愿'"
+              >
+                <text class="category-option-text">心愿</text>
+              </view>
+            </view>
+          </view>
         </view>
         <view class="modal-footer">
           <text class="modal-btn cancel" @click="showEditModalFlag = false">取消</text>
@@ -149,18 +254,26 @@ const todos = ref([])
 const loading = ref(false)
 const showAddModal = ref(false)
 const showEditModalFlag = ref(false)
+const selectedCategory = ref('')
 const newTodo = ref({
   title: '',
-  description: ''
+  description: '',
+  category: '生活'
 })
 const editingTodo = ref({
   id: null,
   title: '',
-  description: ''
+  description: '',
+  category: '生活'
 })
 const touchStartX = ref(0)
 const currentSwipeTodo = ref(null)
 const isSwiping = ref(false)
+
+const selectCategory = async (category) => {
+  selectedCategory.value = category
+  await loadTodos()
+}
 
 const formatTime = (timeStr) => {
   return dayjs.utc(timeStr).utcOffset(8).format('MM-DD HH:mm')
@@ -184,7 +297,13 @@ const loadTodos = async () => {
       family_id: familyStore.familyId
     })
     
-    todos.value = data
+    let filteredData = data
+    
+    if (selectedCategory.value) {
+      filteredData = data.filter(item => item.category === selectedCategory.value)
+    }
+    
+    todos.value = filteredData
       .filter(item => {
         if (item.is_completed) {
           return !isOverOneMonth(item.updated_at)
@@ -290,14 +409,16 @@ const handleAddTodo = async () => {
     await todoApi.createTodo({
       family_id: familyStore.familyId,
       title_ciphertext: titleCiphertext,
-      description_ciphertext: descriptionCiphertext
+      description_ciphertext: descriptionCiphertext,
+      category: newTodo.value.category
     })
     
     uni.showToast({ title: '创建成功', icon: 'success' })
     showAddModal.value = false
     newTodo.value = {
       title: '',
-      description: ''
+      description: '',
+      category: '生活'
     }
     
     await loadTodos()
@@ -378,7 +499,8 @@ const showEditModal = (todo) => {
   editingTodo.value = {
     id: todo.id,
     title: todo.decryptedTitle,
-    description: todo.decryptedDescription || ''
+    description: todo.decryptedDescription || '',
+    category: todo.category || '生活'
   }
   showEditModalFlag.value = true
   todo.showSwipeActions = false
@@ -400,7 +522,8 @@ const handleEditTodo = async () => {
     
     await todoApi.updateTodo(editingTodo.value.id, {
       title_ciphertext: titleCiphertext,
-      description_ciphertext: descriptionCiphertext
+      description_ciphertext: descriptionCiphertext,
+      category: editingTodo.value.category
     })
     
     uni.showToast({ title: '修改成功', icon: 'success' })
@@ -448,6 +571,7 @@ const restoreTodo = async (todo) => {
     await todoApi.updateTodo(todo.id, {
       title_ciphertext: titleCiphertext,
       description_ciphertext: descriptionCiphertext,
+      category: todo.category || '生活',
       is_completed: false
     })
     
@@ -473,6 +597,7 @@ const toggleComplete = async (todo) => {
     await todoApi.updateTodo(todo.id, {
       title_ciphertext: titleCiphertext,
       description_ciphertext: descriptionCiphertext,
+      category: todo.category || '生活',
       is_completed: true
     })
     
@@ -515,6 +640,29 @@ onShow(async () => {
 .todo-container {
   min-height: 100vh;
   background: #f5f5f5;
+}
+
+.category-filter {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  padding: 30rpx 20rpx;
+  display: flex;
+  justify-content: space-around;
+  align-items: center;
+}
+
+.category-item {
+  padding: 12rpx 24rpx;
+  border-radius: 20rpx;
+  transition: all 0.3s;
+}
+
+.category-item.active {
+  background: rgba(255, 255, 255, 0.3);
+}
+
+.category-text {
+  font-size: 28rpx;
+  color: #ffffff;
 }
 
 .header {
@@ -584,12 +732,47 @@ onShow(async () => {
   min-width: 0;
 }
 
+.todo-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 12rpx;
+}
+
 .todo-title {
   font-size: 30rpx;
   font-weight: 500;
   color: #333333;
-  margin-bottom: 12rpx;
   line-height: 1.5;
+  flex: 1;
+  min-width: 0;
+}
+
+.todo-category {
+  padding: 6rpx 16rpx;
+  border-radius: 8rpx;
+  font-size: 22rpx;
+  color: #ffffff;
+  white-space: nowrap;
+  margin-left: 12rpx;
+  margin-right: 40rpx;
+  flex-shrink: 0;
+}
+
+.todo-category.category-生活 {
+  background: #4CAF50;
+}
+
+.todo-category.category-学习 {
+  background: #2196F3;
+}
+
+.todo-category.category-运动 {
+  background: #FF9800;
+}
+
+.todo-category.category-心愿 {
+  background: #E91E63;
 }
 
 .todo-description {
@@ -764,6 +947,39 @@ onShow(async () => {
   color: #ffffff;
   font-weight: bold;
   line-height: 1;
+}
+
+.category-selector {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 20rpx;
+}
+
+.category-option {
+  flex: 1;
+  min-width: 140rpx;
+  padding: 20rpx;
+  border: 2rpx solid #e5e5e5;
+  border-radius: 8rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s;
+}
+
+.category-option.selected {
+  border-color: #667eea;
+  background: rgba(102, 126, 234, 0.1);
+}
+
+.category-option-text {
+  font-size: 28rpx;
+  color: #333333;
+}
+
+.category-option.selected .category-option-text {
+  color: #667eea;
+  font-weight: 500;
 }
 
 .modal {
