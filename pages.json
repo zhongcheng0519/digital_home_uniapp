@@ -1,6 +1,12 @@
 {
 	"pages": [
 		{
+			"path": "pages/note/note",
+			"style": {
+				"navigationBarTitleText": "便利贴"
+			}
+		},
+		{
 			"path": "pages/auth/login",
 			"style": {
 				"navigationBarTitleText": "登录",
@@ -49,12 +55,6 @@
 			"style": {
 				"navigationBarTitleText": "家庭成员"
 			}
-		},
-		{
-			"path": "pages/note/note",
-			"style": {
-				"navigationBarTitleText": "便利贴"
-			}
 		}
 	],
 	"tabBar": {
@@ -64,10 +64,10 @@
 		"borderStyle": "black",
 		"list": [
 			{
-				"pagePath": "pages/index/index",
-				"text": "大事记",
-				"iconPath": "static/tabbar/milestone.png",
-				"selectedIconPath": "static/tabbar/milestone-active.png"
+				"pagePath": "pages/note/note",
+				"text": "便利贴",
+				"iconPath": "static/tabbar/note.png",
+				"selectedIconPath": "static/tabbar/note-active.png"
 			},
 			{
 				"pagePath": "pages/todo/todo",
@@ -76,10 +76,10 @@
 				"selectedIconPath": "static/tabbar/todo-active.png"
 			},
 			{
-				"pagePath": "pages/note/note",
-				"text": "便利贴",
-				"iconPath": "static/tabbar/note.png",
-				"selectedIconPath": "static/tabbar/note-active.png"
+				"pagePath": "pages/index/index",
+				"text": "大事记",
+				"iconPath": "static/tabbar/milestone.png",
+				"selectedIconPath": "static/tabbar/milestone-active.png"
 			},
 			{
 				"pagePath": "pages/members/members",

@@ -90,7 +90,7 @@ const handleLogin = async () => {
     
     setTimeout(() => {
       uni.reLaunch({
-        url: '/pages/index/index'
+        url: '/pages/note/note'
       })
     }, 1500)
     

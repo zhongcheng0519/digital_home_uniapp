@@ -80,6 +80,8 @@
               class="form-input" 
               v-model="newNote.title" 
               placeholder="请输入便利贴标题"
+              type="text"
+              confirm-type="done"
             />
           </view>
           <view class="form-item">
@@ -131,6 +133,8 @@
               class="form-input" 
               v-model="editingNote.title" 
               placeholder="请输入便利贴标题"
+              type="text"
+              confirm-type="done"
             />
           </view>
           <view class="form-item">
@@ -197,6 +201,7 @@ import { useUserStore } from '../../src/stores/user'
 import { useFamilyStore } from '../../src/stores/family'
 import noteApi from '../../src/api/note'
 import authApi from '../../src/api/auth'
+import familyApi from '../../src/api/family'
 import { encryptData, decryptData } from '../../src/utils/crypto'
 import dayjs from '../../src/utils/dayjs'
 
@@ -231,6 +236,40 @@ const viewingNote = ref({
 const selectCategory = async (category) => {
   selectedCategory.value = category
   await loadNotes()
+}
+
+const loadFamilies = async () => {
+  try {
+    const families = await familyApi.getMyFamilies()
+    familyStore.setMyFamilies(families)
+    
+    if (families.length > 0) {
+      const family = families[0]
+      familyStore.setCurrentFamily(family)
+      
+      try {
+        await familyStore.unlockFamily(family.encrypted_family_key, userStore.myPrivateKey)
+      } catch (error) {
+        console.error('解密家庭密钥失败:', error)
+        uni.showToast({ title: '无法解密家庭数据', icon: 'none' })
+      }
+    } else {
+      uni.showModal({
+        title: '提示',
+        content: '您还没有创建家庭，是否立即创建？',
+        success: (res) => {
+          if (res.confirm) {
+            uni.navigateTo({
+              url: '/pages/family/create'
+            })
+          }
+        }
+      })
+    }
+  } catch (error) {
+    console.error('加载家庭列表失败:', error)
+    uni.showToast({ title: '加载家庭列表失败', icon: 'none' })
+  }
 }
 
 const formatTime = (timeStr) => {
@@ -519,11 +558,7 @@ onMounted(async () => {
     return
   }
   
-  if (!familyStore.hasCurrentFamily) {
-    uni.showToast({ title: '请先创建或选择家庭', icon: 'none' })
-    return
-  }
-  
+  await loadFamilies()
   await loadNotes()
 })
 
@@ -774,7 +809,8 @@ onShow(async () => {
 
 .form-input {
   width: 100%;
-  padding: 20rpx;
+  height: 80rpx;
+  padding: 0 20rpx;
   border: 1rpx solid #dddddd;
   border-radius: 8rpx;
   font-size: 28rpx;
