@@ -22,6 +22,13 @@
       >
         <text class="category-text">药方</text>
       </view>
+      <view 
+        class="category-item" 
+        :class="{ active: selectedCategory === 'API密钥' }"
+        @click="selectCategory('API密钥')"
+      >
+        <text class="category-text">API密钥</text>
+      </view>
     </view>
     
     <view class="fab" @click="showAddModal = true">
@@ -110,6 +117,13 @@
               >
                 <text class="category-option-text">药方</text>
               </view>
+              <view 
+                class="category-option" 
+                :class="{ selected: newNote.category === 'API密钥' }"
+                @click="newNote.category = 'API密钥'"
+              >
+                <text class="category-option-text">API密钥</text>
+              </view>
             </view>
           </view>
         </view>
@@ -162,6 +176,13 @@
                 @click="editingNote.category = '药方'"
               >
                 <text class="category-option-text">药方</text>
+              </view>
+              <view 
+                class="category-option" 
+                :class="{ selected: editingNote.category === 'API密钥' }"
+                @click="editingNote.category = 'API密钥'"
+              >
+                <text class="category-option-text">API密钥</text>
               </view>
             </view>
           </view>
@@ -617,6 +638,10 @@ onShow(async () => {
   background: #C8E6C9;
 }
 
+.note-API密钥 {
+  background: #E1BEE7;
+}
+
 .note-header {
   display: flex;
   justify-content: space-between;
@@ -897,6 +922,10 @@ onShow(async () => {
 
 .tag-药方 {
   background: #C8E6C9;
+}
+
+.tag-API密钥 {
+  background: #E1BEE7;
 }
 
 .category-tag-text {

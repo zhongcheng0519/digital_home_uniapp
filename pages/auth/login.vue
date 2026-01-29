@@ -33,6 +33,11 @@
         </view>
       </view>
       
+      <view class="remember-password">
+        <checkbox :checked="rememberPassword" @click="rememberPassword = !rememberPassword" color="#667eea" />
+        <text class="remember-text">记住密码</text>
+      </view>
+      
       <button 
         class="btn-login" 
         :disabled="loading" 
@@ -50,7 +55,7 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, onMounted } from 'vue'
 import { useUserStore } from '../../src/stores/user'
 import { useFamilyStore } from '../../src/stores/family'
 
@@ -61,6 +66,42 @@ const phone = ref('')
 const password = ref('')
 const loading = ref(false)
 const showPassword = ref(false)
+const rememberPassword = ref(false)
+
+const STORAGE_KEY = 'login_credentials'
+
+onMounted(() => {
+  loadSavedCredentials()
+})
+
+const loadSavedCredentials = () => {
+  try {
+    const savedData = uni.getStorageSync(STORAGE_KEY)
+    if (savedData) {
+      phone.value = savedData.phone || ''
+      password.value = savedData.password || ''
+      rememberPassword.value = savedData.rememberPassword || false
+    }
+  } catch (error) {
+    console.error('加载保存的登录信息失败:', error)
+  }
+}
+
+const saveCredentials = () => {
+  try {
+    if (rememberPassword.value) {
+      uni.setStorageSync(STORAGE_KEY, {
+        phone: phone.value,
+        password: password.value,
+        rememberPassword: true
+      })
+    } else {
+      uni.removeStorageSync(STORAGE_KEY)
+    }
+  } catch (error) {
+    console.error('保存登录信息失败:', error)
+  }
+}
 
 const validateForm = () => {
   if (!phone.value) {
@@ -85,6 +126,8 @@ const handleLogin = async () => {
   
   try {
     await userStore.login(phone.value, password.value)
+    
+    saveCredentials()
     
     uni.showToast({ title: '登录成功', icon: 'success' })
     
@@ -191,6 +234,18 @@ const goToRegister = () => {
   font-size: 36rpx;
   padding: 10rpx;
   color: #999999;
+}
+
+.remember-password {
+  display: flex;
+  align-items: center;
+  margin-bottom: 30rpx;
+}
+
+.remember-text {
+  font-size: 26rpx;
+  color: #666666;
+  margin-left: 10rpx;
 }
 
 .btn-login {
